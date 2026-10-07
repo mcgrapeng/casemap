@@ -14,6 +14,22 @@ from casemap.server.models import Case, Status
 _VALID_CI_STATUSES = {"passed", "failed"}
 
 
+def _resolve_case(
+    db: Session, project_id: str, case_id: str
+) -> Case | None:
+    """Look up a Case by either stable_id (preferred) or row PK, scoped to project.
+
+    Returns None if not found — callers decide whether to count as unmatched
+    (CI/import) or raise 404 (router).
+    """
+    return (
+        db.query(Case)
+        .filter(Case.project_id == project_id)
+        .filter((Case.id == case_id) | (Case.stable_id == case_id))
+        .first()
+    )
+
+
 def apply_ci_report(
     db: Session,
     *,
@@ -41,14 +57,14 @@ def apply_ci_report(
         if case_id is None or new_status not in _VALID_CI_STATUSES:
             unmatched += 1
             continue
-        case = db.get(Case, case_id)
-        if case is None or case.project_id != project_id:
+        case = _resolve_case(db, project_id, case_id)
+        if case is None:
             unmatched += 1
             continue
-        row = db.get(Status, case_id)
+        row = db.get(Status, case.id)
         if row is None:
             row = Status(
-                case_id=case_id,
+                case_id=case.id,
                 project_id=project_id,
                 status=new_status,
                 note="",
@@ -90,8 +106,10 @@ def list_cases_with_status(
 
 
 def get_case(db: Session, project_id: str, case_id: str) -> Case:
-    case = db.get(Case, case_id)
-    if case is None or case.project_id != project_id:
+    # Accept either the public stable_id (preferred — what the API surfaces)
+    # or the row's PK (legacy / internal callers). Scoped to project_id.
+    case = _resolve_case(db, project_id, case_id)
+    if case is None:
         raise HTTPException(
             status_code=http_status.HTTP_404_NOT_FOUND, detail="Case not found"
         )
@@ -108,7 +126,7 @@ def update_case_status(
     source: str,
 ) -> Status:
     case = get_case(db, project_id, case_id)
-    row = db.get(Status, case_id)
+    row = db.get(Status, case.id)
     if row is None:
         row = Status(
             case_id=case.id,
@@ -162,12 +180,12 @@ def bulk_import(
     now = datetime.now(UTC)
     for entry in entries:
         case_id = entry["case_id"]
-        case = db.get(Case, case_id)
-        if case is None or case.project_id != project_id:
+        case = _resolve_case(db, project_id, case_id)
+        if case is None:
             skipped += 1
             continue
         incoming_ts = entry.get("updated_at") or now
-        existing = db.get(Status, case_id)
+        existing = db.get(Status, case.id)
         # ponytail: SQLite default returns naive datetimes while we pass
         # tz-aware from the wire — normalize both sides to naive UTC for the
         # comparison. TZ-aware on Postgres.
@@ -182,7 +200,7 @@ def bulk_import(
                 continue
         if existing is None:
             row = Status(
-                case_id=case_id,
+                case_id=case.id,
                 project_id=project_id,
                 status=entry["status"],
                 note=entry.get("note", ""),

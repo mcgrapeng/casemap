@@ -4,3 +4,11 @@ dist
 *.log
 .vite
 coverage
+
+# tsc -b artifacts
+*.tsbuildinfo
+# compiled config files
+tailwind.config.js
+tailwind.config.d.ts
+vite.config.js
+vite.config.d.ts

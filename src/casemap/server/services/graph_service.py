@@ -103,7 +103,8 @@ def ingest_spec(
 
     for node in graph.nodes:
         case = Case(
-            id=node.id,
+            id=f"{project_id}:{node.id}",
+            stable_id=node.id,
             graph_id=graph_row.id,
             project_id=project_id,
             type=node.case.type.value,
@@ -133,7 +134,10 @@ def render_graph_outputs(db: Session, project_id: str, graph_id: str) -> dict[st
     statuses_map: dict[str, dict[str, Any]] = {}
     for case in row.cases:
         if case.status is not None:
-            statuses_map[case.id] = {
+            # Key by stable_id so the renderer (which knows node.id) matches;
+            # fall back to case.id for legacy rows written before stable_id existed.
+            key = case.stable_id or case.id
+            statuses_map[key] = {
                 "status": case.status.status,
                 "note": case.status.note,
             }

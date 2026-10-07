@@ -87,6 +87,10 @@ class Case(Base):
     __tablename__ = "cases"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
+    # ponytail: id is `f"{project_id}:{stable_id}"` so two projects can each own
+    # a case with the same content hash. stable_id preserves the content-derived
+    # BLAKE2b id for renderer + cross-render lookup (statuses, brain-map match).
+    stable_id: Mapped[str | None] = mapped_column(String, nullable=True)
     graph_id: Mapped[str] = mapped_column(
         ForeignKey("graphs.id", ondelete="CASCADE"), nullable=False
     )
@@ -109,6 +113,7 @@ class Case(Base):
     __table_args__ = (
         Index("ix_cases_project_id", "project_id"),
         Index("ix_cases_graph_id", "graph_id"),
+        UniqueConstraint("project_id", "stable_id", name="uq_cases_project_stable_id"),
     )
 
 

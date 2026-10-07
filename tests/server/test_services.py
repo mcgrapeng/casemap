@@ -146,8 +146,8 @@ def test_render_graph_outputs_contains_svg_and_html(db_session):
         source="human",
     )
     out2 = graph_service.render_graph_outputs(db_session, project.id, graph.id)
-    assert case.id in out2["statuses"]
-    assert out2["statuses"][case.id]["status"] == "passed"
+    assert case.stable_id in out2["statuses"]
+    assert out2["statuses"][case.stable_id]["status"] == "passed"
 
 
 # ---------- ci_service ----------

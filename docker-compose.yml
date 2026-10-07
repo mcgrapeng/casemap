@@ -1,0 +1,27 @@
+services:
+  casemap:
+    build: .
+    image: casemap:1.0.0
+    container_name: casemap
+    restart: unless-stopped
+    ports:
+      - "8765:8765"
+    environment:
+      # Bind to all interfaces inside the container; docker-compose maps the host port.
+      CASEMAP_SERVER_HOST: "0.0.0.0"
+      CASEMAP_SERVER_PORT: "8765"
+      # Persist the SQLite DB on a named volume so upgrades don't nuke history.
+      CASEMAP_SERVER_DB_URL: "sqlite:////data/casemap.db"
+    volumes:
+      - casemap-data:/data
+    healthcheck:
+      test: ["CMD", "uv", "run", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8765/openapi.json', timeout=2).status == 200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  casemap-data:
+    # ponytail: named volume (driver default) survives `docker compose down`
+    # unless `-v` is passed — that's the right behavior for a server DB.

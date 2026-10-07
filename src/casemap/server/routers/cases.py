@@ -17,7 +17,11 @@ router = APIRouter(prefix="/projects/{project_id}", tags=["cases"])
 
 def _case_to_dict(c: Case) -> dict[str, Any]:
     return {
-        "id": c.id,
+        # Public id is the content-derived stable_id so the frontend can match
+        # it against graph node.id. db_id is the row's PK (scoped per project)
+        # for callers that need to PATCH the row directly.
+        "id": c.stable_id or c.id,
+        "db_id": c.id,
         "graph_id": c.graph_id,
         "project_id": c.project_id,
         "type": c.type,

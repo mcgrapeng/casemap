@@ -1,237 +1,231 @@
 # casemap
 
-> 功能测试用例图管理系统 · 从接口列表逆向生成可视化测试用例脑图，给非技术测试人员 / 产品人员使用。
+<!-- Logo placeholder: drop a 256x256 PNG/SVG at docs/logo.png and the line below will pick it up -->
+<p align="center">
+  <img src="docs/logo.png" alt="casemap logo" width="120" />
+</p>
 
-## 一句话简介
+<p align="center">
+  <strong>Turn an API spec into a self-contained test-case brain map your QA team can actually use.</strong>
+</p>
 
-把 Swagger / OpenAPI / Postman / Apifox 导出的接口列表 → 一键生成精美的可视化测试用例脑图（**单个自包含 HTML 文件**）。
-测试人员 / PM 打开脑图 → 手动测试 → 点按钮标记状态 → 导出 Markdown 报告或 JSON 进度。
-**零安装前端、零后端、零 CDN，单 HTML 文件双击即可用。**
+<p align="center">
+  <a href="https://github.com/anomalyco/casemap/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" /></a>
+  <img alt="Python tests" src="https://img.shields.io/badge/python%20tests-228%20passed-brightgreen" />
+  <img alt="Frontend tests" src="https://img.shields.io/badge/frontend%20tests-18%20passed-brightgreen" />
+</p>
 
-## 安装
+## One-liner
 
-当前版本为 **v0.1.0**，尚未发布到 PyPI。从源码运行：
+casemap parses OpenAPI / Swagger / Postman / Apifox JSON, generates a
+self-contained HTML file with an inline SVG brain map of test cases, and lets
+non-technical testers click through and mark pass / fail — without installing a
+backend, a CDN, or a frontend framework.
+
+## Three install modes
+
+| Mode | When to use it | What you get |
+|------|---------------|--------------|
+| **CLI** | Solo work, one-off reviews, email-friendly output. | A single `.html` file you can email or open from a USB stick. |
+| **Server** | Multi-device sync, CI integration, persistent history. | FastAPI + SQLite REST API; states live in a DB, not a browser. |
+| **Web** | Multiple stakeholders browsing the same project in real time. | React + Vite + shadcn/ui SPA on top of the server. |
+
+The three modes stack: the server stores everything, the web frontend talks to
+it, and the CLI can either generate standalone HTML *or* push the same spec
+into the server's DB.
+
+---
+
+## Quick start — CLI
 
 ```bash
 git clone https://github.com/anomalyco/casemap
 cd casemap
 uv sync
-uv run casemap --help
+
+# Try the bundled sample
+uv run casemap generate examples/petstore_swagger.json -o cases.html
+open cases.html           # macOS — or just double-click the file
 ```
 
-或临时使用（无需 clone）：
+You'll get an interactive SVG brain map with status controls, progress bar,
+and JSON export/import buttons. Nothing leaves your machine.
 
-```bash
-uv run --from /path/to/casemap casemap generate swagger.json -o cases.html
-```
-
-## 快速使用
-
-### 1. 准备接口列表
-
-从你常用的接口文档工具导出一份 JSON：
-
-| 来源 | 导出方法 |
-|------|----------|
-| SwaggerUI | 页面顶部 "Download JSON" → `swagger.json` |
-| OpenAPI 3.x | 同上，或 `redocly bundle` 合并多文件 |
-| Postman | Export → Collection v2.1 → `postman.json` |
-| Apifox | 项目设置 → 导出 OpenAPI 格式 → `apifox.json` |
-
-### 2. 生成脑图（一次）
-
-```bash
-uv run casemap generate swagger.json -o cases.html
-```
-
-打开 `cases.html`：
-
-- 左侧：**SVG 脑图**，按 `tags` 分列，按 `CaseType` 着色（✅正向 / ❌逆向 / 🔶边界 / 🛡安全）
-- 右侧：选中节点后查看用例详情（步骤 + 备注）
-- 顶栏：**进度条** + 「💾 导出进度」「📥 导入进度」「📤 导出报告」三个按钮
-
-### 3. 测试（重复）
-
-- 点击节点 → 看用例详情
-- 去业务系统手动执行
-- 回到脑图，点状态按钮：`✅ 通过` / `❌ 失败` / `🚫 阻塞` / `⏭️ 跳过`
-- 状态自动保存到浏览器 **localStorage**（无需登录、无需后端）
-- 进度条实时更新
-
-### 4. 跨设备 / 跨浏览器同步
-
-- 顶栏「💾 导出进度」→ 下载 `casemap-status-YYYY-MM-DD.json`
-- 换电脑 / 换浏览器 → 打开同一份 HTML → 顶栏「📥 导入进度」→ 选择刚才的 JSON
-- 用例 ID 用 BLAKE2b 内容指纹生成，重新生成同一份接口列表后**状态自动对得上**
-
-### 5. 导出报告
-
-顶栏「📤 导出报告」→ 下载 `test-report.md`（Markdown 表格）→ 邮件 / 钉钉 / 飞书发给开发。
-
-## 可选：AI 增强（业务语言用例）
-
-默认用例是**启发式生成**的（含 "正向路径 / 缺失必填参数" 这类技术语）。
-启用 LLM 后，标题与描述会被改写为纯业务语言（"用户可以重置自己的密码"）：
-
-```bash
-export CASEMAP_LLM_API_KEY=sk-...
-uv run casemap generate swagger.json -o cases.html --llm --model gpt-4o-mini
-```
-
-任何 **OpenAI 兼容**服务都可以（OpenAI、DeepSeek、Moonshot、Qwen、Zhipu、Ollama 等）：
-
-```bash
-export CASEMAP_LLM_BASE_URL=https://api.deepseek.com/v1
-export CASEMAP_LLM_API_KEY=sk-...
-uv run casemap generate swagger.json -o cases.html --llm --model deepseek-chat
-```
-
-**LLM 失败时自动回退**到结构化用例，脑图照常可用 — 永远不会被卡住。
-
-## 支持的接口文档格式
-
-| 格式 | 说明 |
-|------|------|
-| OpenAPI 3.x / Swagger 2.0 | 通过 `prance` 自动解析 `$ref` |
-| Postman v2.1 collection | 标准 Postman 导出 |
-| Apifox | 委托给 OpenAPI 解析器（Apifox 导出本身就是 OpenAPI 格式） |
-
-自动识别（无需指定），也可以显式 `--parser openapi|postman|apifox`：
-
-```bash
-uv run casemap parsers list   # 看当前已注册的解析器
-```
-
-## CLI 子命令
-
-```bash
-uv run casemap generate  spec.json -o cases.html     # 生成脑图
-uv run casemap validate  spec.json                   # 只解析，不生成
-uv run casemap parsers   list                        # 列出已注册的解析器
-uv run casemap serve     --port 8765 --db ./casemap.db   # 启动 REST API 服务
-```
-
-`resume` 子命令已注册但暂未实现（没有 HTML→spec 的回程），
-重新生成时只要接口列表不变，状态会自动接上。
-
-## Server 模式（v0.2+ · SP-2）
-
-`casemap serve` 启动一个 FastAPI + SQLite 的 REST 服务，方便多设备实时同步、CI 集成与报告存档。
-核心思路与单机模式一致：上传接口列表 → 自动生成脑图 → 状态持久化到 DB，
-不再依赖浏览器 localStorage。 同一份 spec 可多人协作、CI 注入自动更新进度。
+## Quick start — Server
 
 ```bash
 uv run casemap serve --host 0.0.0.0 --port 8765 --db ./casemap.db
-# 然后用 `curl` 或浏览器访问 http://127.0.0.1:8765/docs
+# Browse the auto-generated docs at http://127.0.0.1:8765/docs
 ```
 
-主要 endpoint（全部 `/api/v1/...`）：
-
-| Endpoint | 说明 |
-|----------|------|
-| `POST /projects` | 创建项目，返回一次性 `project_api_key`（后续请求用作 Bearer token） |
-| `POST /projects/{id}/specs` | 上传 spec 文件（multipart），同步生成脑图 |
-| `GET /projects/{id}/graphs/{graph_id}/{svg,html,report,graph.json}` | 渲染产物 |
-| `GET /projects/{id}/cases` / `PATCH .../cases/{id}/status` | 列出 / 更新用例状态 |
-| `GET /projects/{id}/progress` | 聚合进度（与单机脑图 `progress` 字段同源） |
-| `POST/GET /projects/{id}/statuses/{import,export}` | 跨设备状态同步 |
-| `POST /projects/{id}/ci/report` | CI 集成 — 传入 `matched_case_id` 自动更新状态（标 `source=ci`） |
-
-管理类接口需要 `CASEMAP_SERVER_ADMIN_TOKEN`（用于 `GET /projects` 列出所有项目）。
-OpenAPI 自动文档：`/docs`、`/openapi.json`。CORS 默认 `*`，部署时按需收敛。
-
-## 架构（SP-1 + SP-4 + SP-2）
-
-```
-parsers  (OpenAPI / Postman / apifox)
-  ↓ list[Endpoint]
-generators.structural   (7 条启发式规则：happy / required / 404 / auth / conflict / boundary / delete-security)
-  ↓ list[TestCase]  (positive / negative / edge / security)
-generators.functional   (LLM 业务语言改写，可选)
-  ↓ enriched cases
-generators.pipeline     (编排器；LLM 失败 → 回退结构化)
-  ↓ TestGraph
-renderers  (SVG / JSON / Markdown / 自包含 HTML / 只读报告 HTML)
-  └─→ casemap.server.*  (FastAPI + SQLAlchemy + Bearer tokens + CI webhook)
-```
-
-每一层都可以单独替换或扩展：
-
-- **新解析器**：实现 `Parser` Protocol + `ParserRegistry.register(...)`
-- **新 LLM**：实现 `LLMProvider` Protocol，注入到 `GenerationPipeline(llm=...)`
-- **新渲染器**：实现 `render(graph) -> str`
-
-## 关键设计决策
-
-| 决策 | 取舍 |
-|------|------|
-| **自包含 HTML**（不是 SPA） | 浏览器双击即可用，零依赖，零 CDN。可邮件 / U 盘分发 |
-| **内联 SVG**（不是 Mermaid） | 不依赖 CDN，离线可用，文件更小（~30 KB） |
-| **稳定 ID**（BLAKE2b 内容指纹） | 重新生成同一份接口列表，状态接得上；不依赖输入顺序 |
-| **localStorage + JSON 导入导出** | 单浏览器零成本；跨设备用文件搬运（隐私优先于便利） |
-| **LLM 失败 → 回退** | 闭循环永远不出错；网络抖动 / 配额用完都不阻塞 |
-| **接口文档直接消费** | 不要求业务方提供额外元数据 |
-
-## 项目状态
-
-当前 release：**v0.3.0**（SP-1 + SP-2 + SP-3 + SP-4）
-- ✅ 核心引擎（stable_id、structural + functional、pipeline）
-- ✅ 文档解析器（OpenAPI / Postman / apifox）
-- ✅ 5 个渲染器（SVG / JSON / Markdown / 自包含 HTML / 只读报告 HTML）
-- ✅ CLI（generate / validate / parsers list / serve）
-- ✅ Server 模式（FastAPI + SQLite + Bearer 鉴权 + CI webhook）
-- ✅ **响应式 Web 前端**（React 18 + Vite + shadcn/ui，参见 `frontend/`）
-- ✅ 226 个 Python 测试 + 18 个前端测试（vitest + axe-core）
-
-未来计划：
-- **SP-5**：生产环境调试审查 / 性能调优
-
-## Web 前端（SP-3）
-
-`frontend/` 目录是一个独立的 pnpm 包，跟 Python 服务通过 REST + Bearer token 通信：
+Minimal API flow:
 
 ```bash
+BASE=http://127.0.0.1:8765/api/v1
+
+# 1. Create a project (save the API key — it's not recoverable)
+curl -sX POST $BASE/projects -H "Content-Type: application/json" \
+  -d '{"name":"petstore"}' | tee project.json
+
+PID=$(jq -r .id project.json)
+KEY=$(jq -r .project_api_key project.json)
+
+# 2. Upload a spec → server parses, generates the brain map, persists
+curl -sX POST $BASE/projects/$PID/specs \
+  -H "Authorization: Bearer $KEY" \
+  -F "file=@examples/petstore_swagger.json" -F "format=openapi"
+
+# 3. Fetch HTML / SVG / progress — see /docs for everything
+```
+
+For a fully scripted version of this flow, run `python tests/server/test_e2e.py`.
+
+## Quick start — Web
+
+```bash
+# Terminal A — backend
+uv run casemap serve
+
+# Terminal B — frontend dev server
 cd frontend
 pnpm install
-pnpm dev          # http://localhost:5173
-
-# 另一个终端
-uv run casemap serve
+pnpm dev               # http://localhost:5173
 ```
 
-Vite dev server 把 `/api/*` 反代到 `http://127.0.0.1:8765`。生产构建：
+The Vite dev server proxies `/api/*` to the backend. For production:
 
 ```bash
-pnpm build        # tsc + vite build → dist/
+pnpm build             # tsc + vite → frontend/dist/
 ```
 
-主要页面：
+Pages: `/` (project list), `/projects/:id` (brain map), `/projects/:id/cases`
+(table), `/projects/:id/progress` (rollup), `/projects/:id/report` (printable).
 
-| 路径 | 功能 |
-|------|------|
-| `/` | 项目列表 + 服务状态指示 + 新建项目入口 |
-| `/projects/new` | 表单创建项目，一次性返回 API key（带复制 + 警告弹窗） |
-| `/projects/:id` | 核心脑图页（SVG 可缩放/平移/搜索/过滤，右侧详情面板） |
-| `/projects/:id/cases` | 表格视图（排序 + 筛选 + 弹窗详情） |
-| `/projects/:id/progress` | 进度面板（环形图 + 按标签进度条 + 失败列表） |
-| `/projects/:id/report` | 服务端渲染报告（iframe + 打印 + 导出 Markdown） |
-
-设计系统：CSS 变量驱动（在 `src/styles/globals.css`），暗色模式默认，支持
-手动切换 + `prefers-color-scheme`，全部交互可键盘访问。`@tanstack/react-query`
-管服务端状态，`react-hook-form` + `zod` 处理表单。详见 `frontend/README.md`。
-
-## 开发
+## Quick start — Docker
 
 ```bash
-uv sync                    # 安装依赖
-uv run pytest              # 跑测试（带覆盖率）
-uv run ruff check src/ tests/
-uv run ruff format src/ tests/
-uv run mypy src/casemap
+docker build -t casemap:1.0.0 .
+docker compose up       # binds 8765, persists DB on named volume
 ```
 
-仓库内所有样本在 `examples/` 下，集成测试在 `tests/integration/` 下。
+Then point your browser at `http://localhost:8765`. Healthcheck is wired up.
+
+---
+
+## Architecture
+
+```
+┌───────────────────────────┐
+│  parsers/                 │   OpenAPI · Postman · Apifox
+│   OpenAPI (prance)        │   → list[Endpoint]
+│   Postman v2.1            │
+│   apifox (delegates openapi)│
+└─────────────┬─────────────┘
+              ▼
+┌───────────────────────────┐
+│  generators/              │
+│   structural  ──────────┐ │   7 heuristic rules
+│   (happy/required/404/  │ │   (positive / negative / edge / security)
+│    auth/conflict/bound/ │ │
+│    delete-security)     │ │
+│   functional ──────────┘ │   LLM rewrite → business language
+│   (OpenAI-compat)        │   (optional; falls back on error)
+│   pipeline               │   orchestrates structural → functional
+└─────────────┬─────────────┘
+              ▼
+┌───────────────────────────┐
+│  renderers/               │
+│   SVG  (inline)           │   <-- inside the self-contained .html
+│   HTML (self-contained)   │
+│   Markdown decision table │
+│   JSON round-trip         │
+│   Report HTML (read-only) │
+└─────────────┬─────────────┘
+              │
+              ▼
+┌───────────────────────────┐
+│  server/ (SP-2)           │   FastAPI · SQLAlchemy · SQLite
+│   Bearer-token projects   │   Bearer-token projects
+│   Specs / Graphs / Cases  │   CI webhook (matched_case_id → status)
+│   Statuses import/export  │   Per-project stable_id namespace
+└─────────────┬─────────────┘
+              │
+              ▼
+┌───────────────────────────┐
+│  frontend/ (SP-3)         │   React 18 · Vite · shadcn/ui · TS
+│   BrainMap (SVG + zoom)   │   tanstack/react-query · zod · react-hook-form
+│   Progress dashboard      │   18 vitest tests · axe-core a11y
+│   Table view · Report     │
+└───────────────────────────┘
+```
+
+Each layer is a protocol — swap any one without touching the others:
+
+| Want to… | Add |
+|---------|-----|
+| Parse a new spec format | `Parser` impl + `ParserRegistry.register(...)` |
+| Use a different LLM | `LLMProvider` impl, pass to `GenerationPipeline(llm=...)` |
+| Add a renderer | impl with `render(graph) -> str` |
+| Talk to the DB from your own tool | REST API at `/api/v1/...` |
+
+---
+
+## Features
+
+- **Self-contained HTML** — open from email, USB, `curl http://...`; zero CDN, zero install.
+- **Inline SVG brain map** — no Mermaid, ~30 KB; renders offline, scalable, accessible.
+- **Stable case IDs (BLAKE2b)** — re-running on the same spec maps statuses 1:1.
+- **Multi-project namespace** — `Case.id` is scoped per project; uploading the same spec to two projects doesn't collide.
+- **CI webhook** — POST `matched_case_id` + status from your CI runner, server updates with `source=ci`.
+- **Cross-device sync** — `POST /statuses/export` downloads a portable JSON, `POST /statuses/import` merges it back.
+- **LLM rewrite, optional** — turn "missing required param" into "user can submit without required field"; auto-falls-back on any error.
+- **Read-only report HTML** — share with stakeholders; no status controls, just progress + failure reasons.
+- **Web frontend** — brain map with zoom/pan/filter/search; table view; progress dashboard; printable report; keyboard accessible.
+- **Docker** — single command to ship; named volume for DB persistence; healthcheck.
+
+---
+
+## Roadmap
+
+- **v1.1** — authn via OIDC (currently bearer tokens only); per-user audit log
+- **v1.2** — PostgreSQL backend option (SQLite stays default); Alembic migrations
+- **v1.3** — Postman + Apifox CI templates; built-in report scheduling
+- **v1.4** — multi-tenant casemap cloud (hosted) — separate repo
+
+See `docs/ROADMAP.md` (or the GitHub Project board) for the full list.
+
+---
+
+## Development
+
+```bash
+uv sync                    # Python deps
+cd frontend && pnpm install
+uv run pytest -q          # 228 Python tests
+cd frontend && pnpm vitest run        # 18 frontend tests
+cd frontend && pnpm tsc --noEmit        # typecheck
+cd frontend && pnpm build             # production build
+python tests/server/test_e2e.py       # full curl-equivalent E2E
+```
+
+The Python tests cover parsers, generators, renderers, and the FastAPI server
+(in-memory SQLite + httpx TestClient). The frontend tests cover utilities,
+components, and an axe-core a11y scan. `test_e2e.py` is a runnable script
+(not a pytest test) that boots `casemap serve` in a subprocess and drives
+the full HTTP pipeline.
+
+## Contributing
+
+1. Fork the repo.
+2. Branch off `master`: `git switch -c feat/short-description`
+3. Make the smallest diff that fixes the bug / adds the feature.
+4. Add a regression test (one is enough).
+5. `uv run pytest -q && cd frontend && pnpm vitest run` must stay green.
+6. Open a PR.
+
+Bug reports and spec-format quirks: please attach a redacted sample spec.
+LLM output bugs: include the `--llm --model` combo and a 1-line repro.
 
 ## License
 
-MIT
+[MIT](LICENSE)
