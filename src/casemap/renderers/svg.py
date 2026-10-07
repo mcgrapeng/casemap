@@ -139,10 +139,7 @@ class SVGRenderer:
         y1 = sy + NODE_HEIGHT
         x2 = tx + NODE_WIDTH / 2
         y2 = ty
-        return (
-            f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" '
-            f'stroke="#cbd5e1" stroke-width="2"/>'
-        )
+        return f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="#cbd5e1" stroke-width="2"/>'
 
     @staticmethod
     def _render_node(node: TestNode, x: float, y: float) -> str:
@@ -181,12 +178,7 @@ def _render_shape(case_type: CaseType, x: float, y: float, fill: str, stroke: st
     if case_type == CaseType.EDGE:
         cx = x + NODE_WIDTH / 2
         cy = y + NODE_HEIGHT / 2
-        pts = (
-            f"{cx},{y} "
-            f"{x + NODE_WIDTH},{cy} "
-            f"{cx},{y + NODE_HEIGHT} "
-            f"{x},{cy}"
-        )
+        pts = f"{cx},{y} {x + NODE_WIDTH},{cy} {cx},{y + NODE_HEIGHT} {x},{cy}"
         return f'<polygon points="{pts}" fill="{fill}" stroke="{stroke}" stroke-width="2"/>'
     if case_type == CaseType.SECURITY:
         cx = x + NODE_WIDTH / 2

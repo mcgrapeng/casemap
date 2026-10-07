@@ -38,6 +38,7 @@ class StubProvider:
             raise RuntimeError("simulated LLM failure")
         # Return JSON that the functional generator will parse
         import json
+
         return json.dumps([c.model_dump() for c in self._enriched])
 
     async def complete_json(self, prompt, *, schema, system=None):
@@ -75,8 +76,7 @@ class TestFunctionalGenerator:
         ep = _endpoint()
         cases = _structural_cases(ep)
         enriched = [
-            _EnrichedCase(id=cases[0].id, title="业务语言标题：创建用户")
-            for c in cases[:1]
+            _EnrichedCase(id=cases[0].id, title="业务语言标题：创建用户") for c in cases[:1]
         ]
         gen = FunctionalGenerator(provider=StubProvider(enriched=enriched))
         out = await gen.enhance([ep], cases)

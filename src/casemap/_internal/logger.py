@@ -19,9 +19,7 @@ def get_logger(name: str | None = None) -> logging.Logger:
     logger = logging.getLogger(full_name)
     if not logger.handlers:
         handler = logging.StreamHandler()
-        handler.setFormatter(
-            logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-        )
+        handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
         logger.addHandler(handler)
     level = os.environ.get("CASEMAP_LOG_LEVEL", "WARNING").upper()
     logger.setLevel(level)

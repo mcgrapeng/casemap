@@ -69,12 +69,32 @@ def test_status_color_reflected():
     g = TestGraph(
         title="t",
         nodes=[
-            TestNode(id="p", case=TestCase(id="p", type=CaseType.POSITIVE, title="p", status=TestStatus.PASSED)),
-            TestNode(id="f", case=TestCase(id="f", type=CaseType.NEGATIVE, title="f", status=TestStatus.FAILED)),
-            TestNode(id="ip", case=TestCase(id="ip", type=CaseType.POSITIVE, title="ip", status=TestStatus.IN_PROGRESS)),
-            TestNode(id="b", case=TestCase(id="b", type=CaseType.POSITIVE, title="b", status=TestStatus.BLOCKED)),
-            TestNode(id="s", case=TestCase(id="s", type=CaseType.POSITIVE, title="s", status=TestStatus.SKIPPED)),
-            TestNode(id="d", case=TestCase(id="d", type=CaseType.POSITIVE, title="d", status=TestStatus.PENDING)),
+            TestNode(
+                id="p",
+                case=TestCase(id="p", type=CaseType.POSITIVE, title="p", status=TestStatus.PASSED),
+            ),
+            TestNode(
+                id="f",
+                case=TestCase(id="f", type=CaseType.NEGATIVE, title="f", status=TestStatus.FAILED),
+            ),
+            TestNode(
+                id="ip",
+                case=TestCase(
+                    id="ip", type=CaseType.POSITIVE, title="ip", status=TestStatus.IN_PROGRESS
+                ),
+            ),
+            TestNode(
+                id="b",
+                case=TestCase(id="b", type=CaseType.POSITIVE, title="b", status=TestStatus.BLOCKED),
+            ),
+            TestNode(
+                id="s",
+                case=TestCase(id="s", type=CaseType.POSITIVE, title="s", status=TestStatus.SKIPPED),
+            ),
+            TestNode(
+                id="d",
+                case=TestCase(id="d", type=CaseType.POSITIVE, title="d", status=TestStatus.PENDING),
+            ),
         ],
     )
     svg = SVGRenderer().render(g)
@@ -112,9 +132,15 @@ def test_layout_by_tag_groups():
     g = TestGraph(
         title="t",
         nodes=[
-            TestNode(id="u1", case=TestCase(id="u1", type=CaseType.POSITIVE, title="u1", tags=["users"])),
-            TestNode(id="u2", case=TestCase(id="u2", type=CaseType.POSITIVE, title="u2", tags=["users"])),
-            TestNode(id="o1", case=TestCase(id="o1", type=CaseType.POSITIVE, title="o1", tags=["orders"])),
+            TestNode(
+                id="u1", case=TestCase(id="u1", type=CaseType.POSITIVE, title="u1", tags=["users"])
+            ),
+            TestNode(
+                id="u2", case=TestCase(id="u2", type=CaseType.POSITIVE, title="u2", tags=["users"])
+            ),
+            TestNode(
+                id="o1", case=TestCase(id="o1", type=CaseType.POSITIVE, title="o1", tags=["orders"])
+            ),
         ],
     )
     svg = SVGRenderer().render(g)
@@ -225,4 +251,4 @@ def test_keyboard_focusable_via_anchor():
     """The <a> element is focusable and has aria-label for screen readers."""
     g = TestGraph(title="t", nodes=[TestNode(id="a", case=_case(title="登录成功"))])
     svg = SVGRenderer().render(g)
-    assert 'aria-label' in svg
+    assert "aria-label" in svg

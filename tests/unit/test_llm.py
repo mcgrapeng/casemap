@@ -26,6 +26,7 @@ class TestLLMConfig:
     def test_strict_single_model(self):
         # Per spec #11: must reject multi-model lists
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError):
             LLMConfig(provider="openai", model=["a", "b"], api_key="sk")  # type: ignore[arg-type]
 

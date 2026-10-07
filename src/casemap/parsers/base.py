@@ -77,7 +77,6 @@ class ParserRegistry:
         parser = cls.auto_detect(data)
         if parser is None:
             raise ParseError(
-                "No parser matched the input. "
-                f"Registered parsers: {[p.name for p in cls.all()]}"
+                f"No parser matched the input. Registered parsers: {[p.name for p in cls.all()]}"
             )
         return parser.parse(data)

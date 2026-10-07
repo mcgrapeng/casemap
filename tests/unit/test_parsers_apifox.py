@@ -24,7 +24,9 @@ class TestApifoxParser:
 
     def test_can_parse_with_apifox_marker(self):
         spec = {"x-apifox": "1.0", "openapi": "3.0.0", "paths": {}}
-        assert self.parser.can_parse(spec) is True or self.parser.can_parse({"openapi": "3.0.0", "paths": {"/x": {"get": {}}}})
+        assert self.parser.can_parse(spec) is True or self.parser.can_parse(
+            {"openapi": "3.0.0", "paths": {"/x": {"get": {}}}}
+        )
 
     def test_delegates_to_openapi(self):
         # Apifox is essentially OpenAPI + extra metadata; we delegate

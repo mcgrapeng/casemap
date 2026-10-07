@@ -11,3 +11,7 @@ build/
 .casemap_cache.json
 *.html
 !examples/**/*.html
+.superpowers
+.hypothesis
+.venv
+docs

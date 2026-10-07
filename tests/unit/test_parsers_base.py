@@ -37,6 +37,7 @@ def test_register_and_get():
 
 def test_get_missing_raises():
     import pytest
+
     with pytest.raises(KeyError):
         ParserRegistry.get("nonexistent")
 

@@ -77,5 +77,6 @@ class TestOpenAPIParser:
 
     def test_invalid_input_raises(self):
         from casemap._internal.exceptions import ParseError
+
         with pytest.raises(ParseError):
             self.parser.parse({"swagger": "2.0", "paths": "not a dict"})

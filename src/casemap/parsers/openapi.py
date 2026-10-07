@@ -21,12 +21,24 @@ _log = get_logger("parsers.openapi")
 _METHODS = {"get", "post", "put", "patch", "delete", "head", "options"}
 _VALID_LOCATIONS = {"path", "query", "header", "formData"}
 _CONSTRAINT_KEYS = {
-    "minimum", "maximum", "minLength", "maxLength",
-    "pattern", "enum", "format", "minItems", "maxItems", "default",
+    "minimum",
+    "maximum",
+    "minLength",
+    "maxLength",
+    "pattern",
+    "enum",
+    "format",
+    "minItems",
+    "maxItems",
+    "default",
 }
 _TYPE_MAP = {
-    "string": "string", "integer": "integer", "number": "number",
-    "boolean": "boolean", "array": "array", "object": "object",
+    "string": "string",
+    "integer": "integer",
+    "number": "number",
+    "boolean": "boolean",
+    "array": "array",
+    "object": "object",
     "file": "string",
 }
 
@@ -95,7 +107,9 @@ def _param_type_and_constraints(param: dict[str, Any]) -> tuple[str, dict[str, A
     return _TYPE_MAP.get(type_, "string"), constraints
 
 
-def _convert_parameters(raw_params: list[dict[str, Any]]) -> tuple[list[Parameter], Parameter | None]:
+def _convert_parameters(
+    raw_params: list[dict[str, Any]],
+) -> tuple[list[Parameter], Parameter | None]:
     """Convert raw params into (query/path/header/form params, request body)."""
     params: list[Parameter] = []
     body: Parameter | None = None

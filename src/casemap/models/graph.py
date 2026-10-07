@@ -53,5 +53,3 @@ class TestGraph(BaseModel):
         passed = counts[TestStatus.PASSED.value]
         pct = round(passed / total * 100, 2) if total > 0 else 0.0
         return {"total": total, **counts, "completion_pct": pct}
-
-

@@ -27,9 +27,7 @@ class JSONRenderer:
             "version": _VERSION,
             "graph": {
                 "title": graph.title,
-                "nodes": [
-                    {"id": n.id, "case": _to_dict(n.case)} for n in graph.nodes
-                ],
+                "nodes": [{"id": n.id, "case": _to_dict(n.case)} for n in graph.nodes],
                 "edges": [_to_dict(e) for e in graph.edges],
                 "metadata": graph.metadata,
             },

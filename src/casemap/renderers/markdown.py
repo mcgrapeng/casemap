@@ -25,7 +25,5 @@ class MarkdownRenderer:
         lines.append("|---------|------|------|------|")
         for n in graph.nodes:
             label = _TYPE_LABEL.get(n.case.type, n.case.type.value)
-            lines.append(
-                f"| `{n.id}` | {label} | {n.case.title} | {n.case.endpoint_ref or ''} |"
-            )
+            lines.append(f"| `{n.id}` | {label} | {n.case.title} | {n.case.endpoint_ref or ''} |")
         return "\n".join(lines) + "\n"

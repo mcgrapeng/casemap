@@ -21,14 +21,16 @@ class TestTestGraph:
     def test_progress_counts(self):
         cases = [
             TestCase(id=f"i{i}", type=CaseType.POSITIVE, title="t", status=s)
-            for i, s in enumerate([
-                TestStatus.PASSED,
-                TestStatus.PASSED,
-                TestStatus.FAILED,
-                TestStatus.PENDING,
-                TestStatus.PENDING,
-                TestStatus.PENDING,
-            ])
+            for i, s in enumerate(
+                [
+                    TestStatus.PASSED,
+                    TestStatus.PASSED,
+                    TestStatus.FAILED,
+                    TestStatus.PENDING,
+                    TestStatus.PENDING,
+                    TestStatus.PENDING,
+                ]
+            )
         ]
         nodes = [TestNode(id=c.id, case=c) for c in cases]
         g = TestGraph(title="p", nodes=nodes)

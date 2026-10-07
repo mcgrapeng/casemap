@@ -74,12 +74,10 @@ class FunctionalGenerator:
         structural_cases: list[TestCase],
     ) -> str:
         ep_summary = [
-            {"method": str(e.method), "path": e.path, "summary": e.summary}
-            for e in endpoints
+            {"method": str(e.method), "path": e.path, "summary": e.summary} for e in endpoints
         ]
         case_list = [
-            {"id": c.id, "type": c.type.value, "current_title": c.title}
-            for c in structural_cases
+            {"id": c.id, "type": c.type.value, "current_title": c.title} for c in structural_cases
         ]
         return json.dumps(
             {

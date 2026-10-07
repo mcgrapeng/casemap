@@ -55,9 +55,7 @@ class GenerationPipeline:
         return self._build_graph(title, cases, endpoints)
 
     @staticmethod
-    def _apply_statuses(
-        cases: list[TestCase], statuses: dict[str, str] | None
-    ) -> list[TestCase]:
+    def _apply_statuses(cases: list[TestCase], statuses: dict[str, str] | None) -> list[TestCase]:
         if not statuses:
             return cases
         out: list[TestCase] = []

@@ -50,7 +50,9 @@ class TestStructuralGenerator:
             responses=[Response(status_code="200"), Response(status_code="404")],
         )
         cases = self.gen.generate([ep])
-        assert any("不存在" in c.title or "404" in c.title or "not found" in c.title.lower() for c in cases)
+        assert any(
+            "不存在" in c.title or "404" in c.title or "not found" in c.title.lower() for c in cases
+        )
 
     def test_constraint_min_max_generates_edge(self):
         ep = make_endpoint(
@@ -131,7 +133,9 @@ class TestStableIdContentFingerprint:
         order they would be called. If we ever add a rule in the middle, this
         test will catch ID drift.
         """
-        ep = make_endpoint(parameters=[Parameter(name="id", location="path", type="string", required=True)])
+        ep = make_endpoint(
+            parameters=[Parameter(name="id", location="path", type="string", required=True)]
+        )
         cases_before = StructuralGenerator().generate([ep])
         ids_before = sorted(c.id for c in cases_before)
 

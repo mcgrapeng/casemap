@@ -39,7 +39,9 @@ class StructuralGenerator:
             out.extend(self._rule_conflict(ep))
             out.extend(self._rule_constraint_boundaries(ep))
             out.extend(self._rule_delete_security(ep))
-        _log.debug("structural generator produced %d cases from %d endpoints", len(out), len(endpoints))
+        _log.debug(
+            "structural generator produced %d cases from %d endpoints", len(out), len(endpoints)
+        )
         return out
 
     # --- individual rules ----------------------------------------------------
@@ -154,8 +156,14 @@ class StructuralGenerator:
                 out.append(
                     TestCase(
                         id=stable_id(
-                            str(ep.method), ep.path, "rule", "edge-min",
-                            "param", p.name, "bound", str(min_v),
+                            str(ep.method),
+                            ep.path,
+                            "rule",
+                            "edge-min",
+                            "param",
+                            p.name,
+                            "bound",
+                            str(min_v),
                         ),
                         type=CaseType.EDGE,
                         title=f"{ep.summary or ep.path} - 参数 {p.name} 最小值",
@@ -170,8 +178,14 @@ class StructuralGenerator:
                 out.append(
                     TestCase(
                         id=stable_id(
-                            str(ep.method), ep.path, "rule", "edge-max",
-                            "param", p.name, "bound", str(max_v),
+                            str(ep.method),
+                            ep.path,
+                            "rule",
+                            "edge-max",
+                            "param",
+                            p.name,
+                            "bound",
+                            str(max_v),
                         ),
                         type=CaseType.EDGE,
                         title=f"{ep.summary or ep.path} - 参数 {p.name} 最大值",
@@ -186,14 +200,22 @@ class StructuralGenerator:
                 out.append(
                     TestCase(
                         id=stable_id(
-                            str(ep.method), ep.path, "rule", "edge-overflow",
-                            "param", p.name,
+                            str(ep.method),
+                            ep.path,
+                            "rule",
+                            "edge-overflow",
+                            "param",
+                            p.name,
                         ),
                         type=CaseType.EDGE,
                         title=f"{ep.summary or ep.path} - 参数 {p.name} 越界",
                         description=f"{p.name} 超过最大值 {max_v}，预期被拒绝。",
                         steps=[
-                            TestStep(order=1, action=f"将 {p.name} 设为 {max_v + 1}", expected="返回参数错误"),
+                            TestStep(
+                                order=1,
+                                action=f"将 {p.name} 设为 {max_v + 1}",
+                                expected="返回参数错误",
+                            ),
                         ],
                         endpoint_ref=f"{ep.method} {ep.path}",
                         tags=list(ep.tags),
@@ -203,14 +225,20 @@ class StructuralGenerator:
                 out.append(
                     TestCase(
                         id=stable_id(
-                            str(ep.method), ep.path, "rule", "edge-empty-string",
-                            "param", p.name,
+                            str(ep.method),
+                            ep.path,
+                            "rule",
+                            "edge-empty-string",
+                            "param",
+                            p.name,
                         ),
                         type=CaseType.EDGE,
                         title=f"{ep.summary or ep.path} - 参数 {p.name} 为空字符串",
                         description=f"将 {p.name} 设为空串，预期行为合理。",
                         steps=[
-                            TestStep(order=1, action=f"将 {p.name} 留空", expected="合理的拒绝或自动填充"),
+                            TestStep(
+                                order=1, action=f"将 {p.name} 留空", expected="合理的拒绝或自动填充"
+                            ),
                         ],
                         endpoint_ref=f"{ep.method} {ep.path}",
                         tags=list(ep.tags),

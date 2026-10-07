@@ -54,5 +54,3 @@ class TestCase(BaseModel):
     tags: list[str] = Field(default_factory=list)
     status: TestStatus = TestStatus.PENDING
     failure_note: str = ""
-
-
