@@ -11,8 +11,10 @@
 
 <p align="center">
   <a href="https://github.com/anomalyco/casemap/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" /></a>
-  <img alt="Python tests" src="https://img.shields.io/badge/python%20tests-228%20passed-brightgreen" />
-  <img alt="Frontend tests" src="https://img.shields.io/badge/frontend%20tests-18%20passed-brightgreen" />
+  <img alt="Version" src="https://img.shields.io/badge/version-v1.1.0-blue" />
+  <a href="https://github.com/anomalyco/casemap/actions/workflows/python-test.yml"><img alt="CI" src="https://github.com/anomalyco/casemap/actions/workflows/python-test.yml/badge.svg" /></a>
+  <img alt="Python tests" src="https://img.shields.io/badge/python%20tests-236%20passed-brightgreen" />
+  <img alt="Frontend tests" src="https://img.shields.io/badge/frontend%20tests-26%20passed-brightgreen" />
 </p>
 
 <p align="center">

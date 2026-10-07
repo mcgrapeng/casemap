@@ -3,6 +3,22 @@
 All notable changes to casemap are documented here. Versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v1.1.0 (2026-09-21) — real-time sync + CI/CD + user docs
+
+- **feat(ws):** real-time status sync via WebSocket (server + frontend) —
+  status changes from one tester propagate to every connected client in
+  the same project within the same tab session.
+- **ci:** GitHub Actions workflows (`python-test.yml`,
+  `frontend-test.yml`, `python-server-test.yml`, `release.yml`,
+  `docker.yml`) — every push and PR now exercises the full backend
+  pytest suite, the frontend vitest + tsc + vite build, the server
+  end-to-end smoke, and the Docker image build.
+- **docs:** comprehensive Chinese user guide for QA testers and PMs
+  (`docs/user-guide/`, 8 docs, ~14k chars) covering quickstart
+  (offline / team), tester workflow, PM workflow, and troubleshooting.
+- **tests:** 262 tests total — 236 backend (pytest) + 26 frontend
+  (vitest), all green.
+
 ## v1.0.0 (2026-10-07) — feature-complete for the original spec
 
 - **fix(server):** `Case.id` now scoped per project so two projects can upload
