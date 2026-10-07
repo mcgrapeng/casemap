@@ -174,17 +174,51 @@ renderers  (SVG / JSON / Markdown / 自包含 HTML / 只读报告 HTML)
 
 ## 项目状态
 
-当前 release：**v0.2.0**（SP-1 + SP-2 + SP-4）
+当前 release：**v0.3.0**（SP-1 + SP-2 + SP-3 + SP-4）
 - ✅ 核心引擎（stable_id、structural + functional、pipeline）
 - ✅ 文档解析器（OpenAPI / Postman / apifox）
 - ✅ 5 个渲染器（SVG / JSON / Markdown / 自包含 HTML / 只读报告 HTML）
 - ✅ CLI（generate / validate / parsers list / serve）
 - ✅ Server 模式（FastAPI + SQLite + Bearer 鉴权 + CI webhook）
-- ✅ 226 个测试（unit + property + integration + server）
+- ✅ **响应式 Web 前端**（React 18 + Vite + shadcn/ui，参见 `frontend/`）
+- ✅ 226 个 Python 测试 + 18 个前端测试（vitest + axe-core）
 
 未来计划：
-- **SP-3**：响应式 Web 前端（替代自包含 HTML）
 - **SP-5**：生产环境调试审查 / 性能调优
+
+## Web 前端（SP-3）
+
+`frontend/` 目录是一个独立的 pnpm 包，跟 Python 服务通过 REST + Bearer token 通信：
+
+```bash
+cd frontend
+pnpm install
+pnpm dev          # http://localhost:5173
+
+# 另一个终端
+uv run casemap serve
+```
+
+Vite dev server 把 `/api/*` 反代到 `http://127.0.0.1:8765`。生产构建：
+
+```bash
+pnpm build        # tsc + vite build → dist/
+```
+
+主要页面：
+
+| 路径 | 功能 |
+|------|------|
+| `/` | 项目列表 + 服务状态指示 + 新建项目入口 |
+| `/projects/new` | 表单创建项目，一次性返回 API key（带复制 + 警告弹窗） |
+| `/projects/:id` | 核心脑图页（SVG 可缩放/平移/搜索/过滤，右侧详情面板） |
+| `/projects/:id/cases` | 表格视图（排序 + 筛选 + 弹窗详情） |
+| `/projects/:id/progress` | 进度面板（环形图 + 按标签进度条 + 失败列表） |
+| `/projects/:id/report` | 服务端渲染报告（iframe + 打印 + 导出 Markdown） |
+
+设计系统：CSS 变量驱动（在 `src/styles/globals.css`），暗色模式默认，支持
+手动切换 + `prefers-color-scheme`，全部交互可键盘访问。`@tanstack/react-query`
+管服务端状态，`react-hook-form` + `zod` 处理表单。详见 `frontend/README.md`。
 
 ## 开发
 
