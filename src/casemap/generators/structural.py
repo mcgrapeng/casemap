@@ -211,9 +211,17 @@ class StructuralGenerator:
                         title=f"{ep.summary or ep.path} - 参数 {p.name} 越界",
                         description=f"{p.name} 超过最大值 {max_v}，预期被拒绝。",
                         steps=[
+                            # ponytail: only emit overflow case if max_v is
+                            # numeric. String "100" (legal JSON, valid schema
+                            # declaration) would TypeError on +1.
                             TestStep(
                                 order=1,
-                                action=f"将 {p.name} 设为 {max_v + 1}",
+                                action=(
+                                    f"将 {p.name} 设为 {int(max_v) + 1}"
+                                    if isinstance(max_v, (int, float))
+                                    and not isinstance(max_v, bool)
+                                    else f"将 {p.name} 设为超过最大值 {max_v} 的非法值"
+                                ),
                                 expected="返回参数错误",
                             ),
                         ],

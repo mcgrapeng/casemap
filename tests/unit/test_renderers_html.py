@@ -10,6 +10,7 @@ P0 #3 — status export / import mechanism for PM cross-browser visibility
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 from casemap.models.graph import TestGraph, TestNode
 from casemap.models.testcase import CaseType, TestCase, TestStatus
@@ -216,3 +217,164 @@ def test_case_node_click_delegation_js():
     # one place uses addEventListener for .case-node OR querySelectorAll('.case-node')
     assert "case-node" in html
     assert "addEventListener" in html
+
+
+# ---------- SP-5 Critical #1: XSS via </script> in JSON-in-script ----------
+
+
+def test_xss_script_breakout_blocked_in_payload():
+    """A case title containing </script>...<script> must NOT appear literally
+    in the JSON payload inside the <script> block — only the escaped <\\/ form.
+    """
+    evil_title = "x</script><script>alert(1)</script>"
+    g = _graph(
+        TestNode(
+            id="evil",
+            case=TestCase(id="evil", type=CaseType.POSITIVE, title=evil_title),
+        )
+    )
+    html = HTMLSelfRenderer().render(g)
+    # The JSON payload is the substring between the script-element-opening
+    # tag for INITIAL_STATUSES_JS and its legitimate closing </script> tag.
+    # Find the boundaries precisely: the payload lives between
+    # `<script>` (the one immediately preceding window.__INITIAL_STATUSES__)
+    # and the FIRST </script> after that.
+    start = html.find("window.__INITIAL_STATUSES__")
+    assert start != -1
+    # Walk back to the <script> tag that opens this block
+    script_open = html.rfind("<script>", 0, start)
+    assert script_open != -1
+    # Find the legitimate closing tag of this <script> element
+    script_close = html.find("</script>", start)
+    assert script_close != -1
+    payload_segment = html[script_open + len("<script>"):script_close]
+    # The literal '</script>' must not appear inside the JSON payload
+    assert "</script>" not in payload_segment, (
+        f"XSS: literal </script> leaked into JSON payload: {payload_segment!r}"
+    )
+    # But the escape <\\/script> must be present (proves the payload is safe-encoded)
+    assert "<\\/script>" in payload_segment, (
+        f"expected escaped form in payload, got: {payload_segment[:200]!r}"
+    )
+
+
+# ---------- SP-5 Important #1: string.Template placeholder conflict ----------
+
+
+def test_dollar_in_case_title_does_not_corrupt_payload():
+    """A case title containing $cases_json must not be substituted by Template.
+
+    string.Template.substitute treats $name as a placeholder. If the title is
+    `$cases_json`, the substitute call would either raise KeyError (unknown
+    identifier in the JSON) or silently replace the JSON. With str.replace
+    semantics, the literal $cases_json should survive verbatim.
+    """
+    g = _graph(
+        TestNode(
+            id="d1",
+            case=TestCase(
+                id="d1",
+                type=CaseType.POSITIVE,
+                title="test $cases_json and $statuses_json $",
+            ),
+        )
+    )
+    html = HTMLSelfRenderer().render(g)  # should not raise
+    assert "$cases_json" in html
+    assert "$statuses_json" in html
+
+
+# ---------- SP-5 Important #3: atomic HTML output write ----------
+
+
+def test_generate_writes_atomically_via_tmp(tmp_path, monkeypatch):
+    """The CLI should write to .tmp then os.replace, not direct write_text.
+
+    Verified by inspecting that no leftover .tmp file remains after success
+    and that the final output file is intact.
+    """
+    # ponytail: re-register parsers. test_parsers_base.setup_function clears
+    # ParserRegistry._parsers between tests and never re-registers the
+    # real parsers; an earlier file leaves the registry empty. Force a
+    # re-import via importlib so the top-level register() calls re-run.
+    import importlib
+
+    import casemap.parsers as _parsers
+    import casemap.parsers.apifox as _apifox
+    import casemap.parsers.openapi as _openapi
+    import casemap.parsers.postman as _postman
+
+    importlib.reload(_openapi)
+    importlib.reload(_postman)
+    importlib.reload(_apifox)
+    importlib.reload(_parsers)
+
+    from click.testing import CliRunner
+
+    from casemap.cli import main
+
+    runner = CliRunner()
+    src = Path(__file__).parent.parent / "fixtures" / "petstore_swagger.json"
+    out = tmp_path / "atomic.html"
+    result = runner.invoke(main, ["generate", str(src), "-o", str(out)])
+    assert result.exit_code == 0, result.output
+    assert out.exists()
+    # No leftover .tmp file next to the output
+    leftover = list(tmp_path.glob("*.tmp"))
+    assert leftover == [], f"leftover tmp files: {leftover}"
+    # Output should be complete (starts with doctype)
+    assert out.read_text(encoding="utf-8").startswith("<!DOCTYPE html>")
+
+
+# ---------- SP-5 Important #9: unbounded input file read ----------
+
+
+def test_generate_rejects_oversized_input(tmp_path, monkeypatch):
+    """CLI must reject input files above the size cap before reading them all.
+
+    We lower the cap to 100 bytes via monkeypatch so the test stays fast and
+    doesn't actually allocate 100MB on disk.
+    """
+    from click.testing import CliRunner
+
+    import casemap.cli as cli_mod
+    from casemap.cli import main
+
+    monkeypatch.setattr(cli_mod, "_MAX_INPUT_BYTES", 100)
+
+    runner = CliRunner()
+    src = tmp_path / "huge.json"
+    # Content > 100 bytes (pad with whitespace in a JSON comment-like field)
+    src.write_text('{"openapi": "3.0.0", "info": {"title": "' + ("x" * 200) + '", "version": "1"}}')
+
+    out = tmp_path / "out.html"
+    result = runner.invoke(main, ["generate", str(src), "-o", str(out)])
+    assert result.exit_code != 0
+    assert "too large" in result.output.lower()
+    assert not out.exists()
+
+
+def test_read_input_accepts_small_and_rejects_oversized(tmp_path, monkeypatch):
+    """Unit-test the size guard on _read_input directly.
+
+    Lower the cap to 100 bytes so we don't have to allocate a real 100MB file.
+    """
+    import casemap.cli as cli_mod
+    from casemap._internal.exceptions import ParseError
+
+    monkeypatch.setattr(cli_mod, "_MAX_INPUT_BYTES", 100)
+
+    # Small file under cap → succeeds
+    small = tmp_path / "small.json"
+    small.write_text("{}")
+    assert cli_mod._read_input(str(small)) == {}
+
+    # File above cap → raises ParseError BEFORE reading
+    big = tmp_path / "big.json"
+    big.write_text("a" * 200)
+    try:
+        cli_mod._read_input(str(big))
+    except ParseError as e:
+        assert "too large" in str(e).lower()
+    else:
+        raise AssertionError("expected ParseError for over-cap file")

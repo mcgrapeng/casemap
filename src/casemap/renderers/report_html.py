@@ -5,7 +5,9 @@ from __future__ import annotations
 from datetime import UTC
 from typing import Any
 
-from jinja2 import Template
+# ponytail: autoescape=True blocks XSS via {{ r.title }} when title contains
+# raw HTML. Required because report HTML is shared with PM/dev over email/IM.
+from jinja2 import Environment
 
 from casemap._internal.exceptions import RenderError
 from casemap.models.graph import TestGraph
@@ -49,7 +51,9 @@ th { background: #f8fafc; font-weight: 600; }
 .failed-item:last-child { border-bottom: none; }
 """
 
-TEMPLATE = Template("""\
+TEMPLATE = (
+    Environment(autoescape=True)
+    .from_string("""\
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -103,6 +107,7 @@ TEMPLATE = Template("""\
 </body>
 </html>
 """)
+)
 
 
 class ReportHTMLRenderer:

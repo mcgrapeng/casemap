@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import json
 from contextlib import suppress
-from string import Template
 from typing import Any
 
 from jinja2 import Template as JinjaTemplate
@@ -31,13 +30,23 @@ from casemap.renderers.svg import SVGRenderer
 __all__ = ["HTMLSelfRenderer"]
 
 
+def _safe_json_for_script(payload: dict[str, Any] | list[Any] | str | int | float | bool | None) -> str:
+    """JSON-encoded but HTML-safe for embedding inside a <script> block.
+
+    Browsers terminate <script> at the first </script> they see, even inside
+    a JS string literal. Escape </ -> <\\/ so the payload round-trips to
+    identical JSON but cannot break out of the script element.
+    """
+    raw = json.dumps(payload, ensure_ascii=False)
+    return raw.replace("</", "<\\/")
+
+
 class HTMLSelfRenderer:
     """Render a TestGraph as a single self-contained HTML file."""
 
     def __init__(self) -> None:
         self._svg = SVGRenderer()
         self._template = JinjaTemplate(HTML_TEMPLATE)
-        self._init_template = Template(INITIAL_STATUSES_JS)
 
     def render(
         self,
@@ -50,12 +59,16 @@ class HTMLSelfRenderer:
         cases_dict = {n.id: n.case.model_dump(mode="json") for n in graph.nodes}
         node_to_case = {n.id: n.id for n in graph.nodes}
 
-        init_js_raw: Any = self._init_template.substitute(
-            statuses_json=json.dumps(statuses or {}, ensure_ascii=False),
-            cases_json=json.dumps(cases_dict, ensure_ascii=False),
-            node_to_case_json=json.dumps(node_to_case, ensure_ascii=False),
-        )
-        init_js = str(init_js_raw)
+        # ponytail: explicit placeholders, no $-pattern interpretation against
+        # user-controlled JSON. Three known keys, three plain replace() calls.
+        sentinels = {
+            "$statuses_json": _safe_json_for_script(statuses or {}),
+            "$cases_json": _safe_json_for_script(cases_dict),
+            "$node_to_case_json": _safe_json_for_script(node_to_case),
+        }
+        init_js = INITIAL_STATUSES_JS
+        for k, v in sentinels.items():
+            init_js = init_js.replace(k, v)
         try:
             rendered: Any = self._template.render(
                 title=graph.title,

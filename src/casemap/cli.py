@@ -52,7 +52,11 @@ def generate(
     model: str | None,
 ) -> None:
     """Generate a test case brain map from an interface list."""
-    raw = _read_input(input)
+    try:
+        raw = _read_input(input)
+    except ParseError as e:
+        click.echo(f"Invalid: {e}", err=True)
+        sys.exit(1)
     if parser:
         p = ParserRegistry.get(parser, default=None)
         if p is None:
@@ -83,7 +87,11 @@ def generate(
     else:
         graph = pipeline.run(endpoints, title=Path(input).stem)
     html = HTMLSelfRenderer().render(graph)
-    Path(output).write_text(html, encoding="utf-8")
+    # ponytail: temp-and-rename prevents corrupt HTML when CLI is killed mid-write.
+    out_path = Path(output)
+    tmp = out_path.with_suffix(out_path.suffix + ".tmp")
+    tmp.write_text(html, encoding="utf-8")
+    os.replace(tmp, out_path)
     click.echo(f"Wrote {output} ({len(graph.nodes)} cases from {len(endpoints)} endpoints)")
 
 
@@ -118,7 +126,11 @@ def parsers_list() -> None:
 @click.argument("input", type=click.Path(exists=True))
 def validate(input: str) -> None:
     """Validate an interface document without generating."""
-    raw = _read_input(input)
+    try:
+        raw = _read_input(input)
+    except ParseError as e:
+        click.echo(f"Invalid: {e}", err=True)
+        sys.exit(1)
     try:
         endpoints = ParserRegistry.parse_auto(raw)
     except ParseError as e:
@@ -129,8 +141,18 @@ def validate(input: str) -> None:
         click.echo(f"  - {ep.method} {ep.path}")
 
 
+_MAX_INPUT_BYTES = 100 * 1024 * 1024  # 100 MB
+
+
 def _read_input(path: str) -> dict[str, Any]:
-    text = Path(path).read_text(encoding="utf-8")
+    p = Path(path)
+    size = p.stat().st_size
+    if size > _MAX_INPUT_BYTES:
+        raise ParseError(
+            f"Input file too large: {size} bytes (max {_MAX_INPUT_BYTES:,}). "
+            "Split your spec or contact support."
+        )
+    text = p.read_text(encoding="utf-8")
     result: dict[str, Any] = json.loads(text)
     return result
 

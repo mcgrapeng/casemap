@@ -120,6 +120,35 @@ class TestStructuralGenerator:
         assert not any("404" in c.title for c in cases)
 
 
+class TestConstraintBoundariesEdgeCases:
+    """SP-5 Important #6: constraint values may be non-numeric (legal JSON strings)."""
+
+    def test_string_maximum_does_not_raise(self):
+        """When `maximum` is a string (legal JSON), the generator must NOT
+        attempt arithmetic on it. It should either coerce, skip the overflow
+        case, or coerce to int — but never raise TypeError.
+        """
+        ep = make_endpoint(
+            method=HttpMethod.GET,
+            path="/items",
+            parameters=[
+                Parameter(
+                    name="qty",
+                    location="query",
+                    type="integer",
+                    required=False,
+                    constraints={"minimum": "0", "maximum": "100"},  # string, not int
+                )
+            ],
+        )
+        # Must not raise
+        cases = StructuralGenerator().generate([ep])
+        # If the overflow case is generated at all, its action must not be a
+        # TypeError artifact like "None" or be missing.
+        edges = [c for c in cases if c.type == CaseType.EDGE]
+        assert edges, "expected at least one edge case for min/max constraints"
+
+
 class TestStableIdContentFingerprint:
     """P0 #1: stable_id must use content fingerprints, not position indices.
 

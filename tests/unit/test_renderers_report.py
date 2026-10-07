@@ -46,3 +46,27 @@ def test_self_contained():
     html = ReportHTMLRenderer().render(g, {})
     assert html.startswith("<!DOCTYPE html>")
     assert "<style>" in html
+
+
+# ---------- SP-5 Critical #2: XSS via unescaped Jinja2 in report ----------
+
+
+def test_xss_in_title_is_escaped():
+    """A title containing <script> must NOT execute when the report is opened.
+
+    Jinja2 must autoescape {{ title }} / {{ r.title }} / {{ r.note or '' }}.
+    """
+    g = TestGraph(
+        title="<script>alert('xss')</script>",
+        nodes=[
+            TestNode(
+                id="a",
+                case=TestCase(id="a", type=CaseType.POSITIVE, title="<img src=x onerror=alert(1)>"),
+            )
+        ],
+    )
+    html = ReportHTMLRenderer().render(g, {"a": {"status": "failed", "note": "<script>alert(2)</script>"}})
+    # The raw <script> tag must not survive into the output - the &lt; form must.
+    assert "<script>alert(" not in html
+    # And the escaped entities must be present
+    assert "&lt;script&gt;" in html or "alert" not in html.replace("&lt;", "").replace("&gt;", "")

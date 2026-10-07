@@ -51,6 +51,63 @@ class TestFileCache:
         c = FileCache(path)
         assert c.get("k") is None  # no crash
 
+    # ---------- SP-5 Important #2 + #5: race-free concurrent writes + size cap --
+
+    def test_concurrent_writes_preserve_all_entries(self, tmp_path: Path):
+        """With a file lock, N threads writing distinct keys must see all N.
+
+        Without locking (the prior code), the read-modify-write race loses
+        entries: two writers both read base X, each appends their own key,
+        the second write wins. We assert all 50 keys survive.
+        """
+        import threading
+
+        from casemap.llm.cache import FileCache
+
+        path = tmp_path / "race.json"
+        cache = FileCache(path)
+
+        n_threads = 50
+        errors: list[BaseException] = []
+
+        def worker(i: int) -> None:
+            try:
+                cache.set(f"k{i}", f"v{i}")
+            except BaseException as e:  # pragma: no cover - bubble up
+                errors.append(e)
+
+        threads = [threading.Thread(target=worker, args=(i,)) for i in range(n_threads)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        assert not errors, errors
+
+        import json as _json
+
+        on_disk = dict(_json.loads(path.read_text()))
+        # Every key must be present (no read-modify-write loss)
+        for i in range(n_threads):
+            assert f"k{i}" in on_disk, f"key k{i} lost in race"
+            assert on_disk[f"k{i}"] == f"v{i}"
+
+    def test_bounded_by_max_entries(self, tmp_path: Path):
+        """Cache must cap at MAX_ENTRIES; oldest entries get evicted FIFO."""
+        from casemap.llm.cache import FileCache
+
+        path = tmp_path / "bounded.json"
+        cache = FileCache(path)
+        # Write more than MAX_ENTRIES
+        for i in range(FileCache.MAX_ENTRIES + 50):
+            cache.set(f"k{i}", i)
+
+        import json as _json
+
+        on_disk = dict(_json.loads(path.read_text()))
+        assert len(on_disk) <= FileCache.MAX_ENTRIES, (
+            f"cache grew to {len(on_disk)} entries, cap is {FileCache.MAX_ENTRIES}"
+        )
+
 
 class FakeProvider:
     """For testing things that consume an LLMProvider."""
