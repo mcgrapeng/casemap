@@ -29,6 +29,8 @@ vi.mock('@/lib/api', () => ({
   },
   setAuthToken: vi.fn(),
   getAuthToken: vi.fn(),
+  setAdminToken: vi.fn(),
+  getAdminToken: vi.fn(),
   ApiError: class ApiError extends Error {
     status = 0;
     detail = '';

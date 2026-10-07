@@ -2,6 +2,7 @@
 // per project). Token storage kept in module state; switch to context if the
 // app grows multiple token sources.
 let currentToken: string | null = null;
+let currentAdminToken: string | null = null;
 
 export function setAuthToken(token: string | null) {
   currentToken = token;
@@ -9,6 +10,14 @@ export function setAuthToken(token: string | null) {
 
 export function getAuthToken(): string | null {
   return currentToken;
+}
+
+export function setAdminToken(token: string | null) {
+  currentAdminToken = token;
+}
+
+export function getAdminToken(): string | null {
+  return currentAdminToken;
 }
 
 export class ApiError extends Error {
@@ -32,6 +41,16 @@ interface RequestOpts {
 
 const BASE = '/api/v1';
 
+// ponytail: server's `require_admin` reads the standard Authorization Bearer
+// header (not a custom X-Admin-Token), so we reuse Authorization for the
+// admin token on the two /projects endpoints that need it. Per-endpoint
+// routing keeps admin and project tokens from stomping each other.
+const ADMIN_PATHS = new Set<string>(['/projects']);
+
+function tokenForPath(path: string): string | null {
+  return ADMIN_PATHS.has(path) ? currentAdminToken : currentToken;
+}
+
 function buildUrl(path: string, query?: RequestOpts['query']): string {
   const url = new URL(`${BASE}${path}`, window.location.origin);
   if (query) {
@@ -44,7 +63,8 @@ function buildUrl(path: string, query?: RequestOpts['query']): string {
 
 export async function request<T>(path: string, opts: RequestOpts = {}): Promise<T> {
   const headers: Record<string, string> = {};
-  if (currentToken) headers['Authorization'] = `Bearer ${currentToken}`;
+  const token = tokenForPath(path);
+  if (token) headers['Authorization'] = `Bearer ${token}`;
   let body: BodyInit | undefined;
   if (opts.formData) {
     body = opts.formData;

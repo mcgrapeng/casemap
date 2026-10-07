@@ -3,6 +3,25 @@
 All notable changes to casemap are documented here. Versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v1.1.1 (2026-10-07) — admin token UI fix
+
+- **fix(frontend):** add admin token UI — users couldn't create projects before.
+  - HomePage now renders an "Admin token" card with a password input that
+    persists to `localStorage` under `casemap.admin_token`.
+  - On click of "New Project" without a configured admin token, an error
+    toast (`请先输入管理员令牌`) fires and the form stays closed.
+  - Header shows a green shield badge when the admin token is configured,
+    and a neutral "no admin" badge when it isn't.
+  - `api.ts` now exposes `setAdminToken()` / `getAdminToken()` and routes
+    `Authorization: Bearer` to the admin token on `/projects` (list +
+    create), keeping `Authorization: Bearer` for the project token on
+    every other endpoint — no leaks between admin and project scopes.
+  - The clear-admin flow is one click on the HomePage card; project
+    requests are untouched.
+  - 14 new frontend tests (7 in `tests/lib/api.test.ts`, 7 in
+    `tests/pages/HomePage.test.tsx`); pre-existing 26 tests still green;
+    total 40 vitest tests passing.
+
 ## v1.1.0 (2026-09-21) — real-time sync + CI/CD + user docs
 
 - **fix(server):** serve React frontend dist from FastAPI — closes the

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Moon, Sun, LogOut, KeyRound, Server } from 'lucide-react';
+import { Moon, Sun, LogOut, KeyRound, Server, ShieldCheck, ShieldOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useTheme } from '@/hooks/useTheme';
@@ -13,7 +13,7 @@ interface HeaderProps {
 
 export function Header({ serverOnline = true, projectName }: HeaderProps) {
   const { effective, setTheme, theme } = useTheme();
-  const { token, setToken } = useAuth();
+  const { token, setToken, adminToken } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -47,6 +47,25 @@ export function Header({ serverOnline = true, projectName }: HeaderProps) {
       )}
 
       <div className="ml-auto flex items-center gap-2">
+        {adminToken ? (
+          <Badge
+            variant="secondary"
+            className="hidden gap-1 border-status-passed/40 bg-status-passed/10 text-status-passed sm:inline-flex"
+            aria-label="Admin token configured"
+            title="Admin token configured"
+          >
+            <ShieldCheck className="h-3 w-3" /> admin
+          </Badge>
+        ) : (
+          <Badge
+            variant="outline"
+            className="hidden gap-1 sm:inline-flex"
+            aria-label="No admin token"
+            title="No admin token"
+          >
+            <ShieldOff className="h-3 w-3" /> no admin
+          </Badge>
+        )}
         {token && (
           <Badge variant="secondary" className="hidden gap-1 sm:inline-flex">
             <KeyRound className="h-3 w-3" /> token
