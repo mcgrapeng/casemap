@@ -108,12 +108,39 @@ uv run casemap parsers list   # 看当前已注册的解析器
 uv run casemap generate  spec.json -o cases.html     # 生成脑图
 uv run casemap validate  spec.json                   # 只解析，不生成
 uv run casemap parsers   list                        # 列出已注册的解析器
+uv run casemap serve     --port 8765 --db ./casemap.db   # 启动 REST API 服务
 ```
 
 `resume` 子命令已注册但暂未实现（没有 HTML→spec 的回程），
 重新生成时只要接口列表不变，状态会自动接上。
 
-## 架构（SP-1 + SP-4）
+## Server 模式（v0.2+ · SP-2）
+
+`casemap serve` 启动一个 FastAPI + SQLite 的 REST 服务，方便多设备实时同步、CI 集成与报告存档。
+核心思路与单机模式一致：上传接口列表 → 自动生成脑图 → 状态持久化到 DB，
+不再依赖浏览器 localStorage。 同一份 spec 可多人协作、CI 注入自动更新进度。
+
+```bash
+uv run casemap serve --host 0.0.0.0 --port 8765 --db ./casemap.db
+# 然后用 `curl` 或浏览器访问 http://127.0.0.1:8765/docs
+```
+
+主要 endpoint（全部 `/api/v1/...`）：
+
+| Endpoint | 说明 |
+|----------|------|
+| `POST /projects` | 创建项目，返回一次性 `project_api_key`（后续请求用作 Bearer token） |
+| `POST /projects/{id}/specs` | 上传 spec 文件（multipart），同步生成脑图 |
+| `GET /projects/{id}/graphs/{graph_id}/{svg,html,report,graph.json}` | 渲染产物 |
+| `GET /projects/{id}/cases` / `PATCH .../cases/{id}/status` | 列出 / 更新用例状态 |
+| `GET /projects/{id}/progress` | 聚合进度（与单机脑图 `progress` 字段同源） |
+| `POST/GET /projects/{id}/statuses/{import,export}` | 跨设备状态同步 |
+| `POST /projects/{id}/ci/report` | CI 集成 — 传入 `matched_case_id` 自动更新状态（标 `source=ci`） |
+
+管理类接口需要 `CASEMAP_SERVER_ADMIN_TOKEN`（用于 `GET /projects` 列出所有项目）。
+OpenAPI 自动文档：`/docs`、`/openapi.json`。CORS 默认 `*`，部署时按需收敛。
+
+## 架构（SP-1 + SP-4 + SP-2）
 
 ```
 parsers  (OpenAPI / Postman / apifox)
@@ -125,6 +152,7 @@ generators.functional   (LLM 业务语言改写，可选)
 generators.pipeline     (编排器；LLM 失败 → 回退结构化)
   ↓ TestGraph
 renderers  (SVG / JSON / Markdown / 自包含 HTML / 只读报告 HTML)
+  └─→ casemap.server.*  (FastAPI + SQLAlchemy + Bearer tokens + CI webhook)
 ```
 
 每一层都可以单独替换或扩展：
@@ -146,15 +174,15 @@ renderers  (SVG / JSON / Markdown / 自包含 HTML / 只读报告 HTML)
 
 ## 项目状态
 
-当前 release：**v0.1.0**（SP-1 + SP-4）
+当前 release：**v0.2.0**（SP-1 + SP-2 + SP-4）
 - ✅ 核心引擎（stable_id、structural + functional、pipeline）
 - ✅ 文档解析器（OpenAPI / Postman / apifox）
 - ✅ 5 个渲染器（SVG / JSON / Markdown / 自包含 HTML / 只读报告 HTML）
-- ✅ CLI（generate / validate / parsers list）
-- ✅ 117 个测试（unit + property + integration）
+- ✅ CLI（generate / validate / parsers list / serve）
+- ✅ Server 模式（FastAPI + SQLite + Bearer 鉴权 + CI webhook）
+- ✅ 226 个测试（unit + property + integration + server）
 
 未来计划：
-- **SP-2**：REST API 服务（多设备实时同步、CI 集成、报告存档）
 - **SP-3**：响应式 Web 前端（替代自包含 HTML）
 - **SP-5**：生产环境调试审查 / 性能调优
 

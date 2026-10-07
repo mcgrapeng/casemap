@@ -185,5 +185,35 @@ def _read_input(path: str) -> dict[str, Any]:
     return result
 
 
+@main.command()
+@click.option("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
+@click.option("--port", default=8765, type=int, help="Bind port (default: 8765)")
+@click.option(
+    "--db",
+    "db_url",
+    default=None,
+    help="SQLAlchemy DB URL (default: $CASEMAP_SERVER_DB_URL or sqlite:///./casemap.db)",
+)
+@click.option(
+    "--reload",
+    is_flag=True,
+    help="Auto-reload on file changes (dev mode)",
+)
+def serve(host: str, port: int, db_url: str | None, reload: bool) -> None:
+    """Run the casemap REST server (FastAPI + SQLite)."""
+    # ponytail: importing uvicorn + casemap.server here (not at module top)
+    # so `casemap generate` doesn't pay the FastAPI import cost.
+    import uvicorn  # noqa: PLC0415
+
+    url = db_url or os.environ.get("CASEMAP_SERVER_DB_URL", "sqlite:///./casemap.db")
+    os.environ["CASEMAP_SERVER_DB_URL"] = url
+    os.environ["CASEMAP_SERVER_HOST"] = host
+    os.environ["CASEMAP_SERVER_PORT"] = str(port)
+    click.echo(f"casemap server starting at http://{host}:{port}  db={url}")
+    from casemap.server.app import app  # noqa: PLC0415
+
+    uvicorn.run(app, host=host, port=port, reload=reload)
+
+
 if __name__ == "__main__":
     main()
