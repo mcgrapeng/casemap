@@ -5,6 +5,15 @@ All notable changes to casemap are documented here. Versions follow
 
 ## v1.1.0 (2026-09-21) — real-time sync + CI/CD + user docs
 
+- **fix(server):** serve React frontend dist from FastAPI — closes the
+  integration gap where `casemap serve` only served a placeholder index
+  instead of the real `frontend/dist/`. The server now auto-discovers
+  `<project_root>/frontend/dist`, mounts `/assets/*` for hashed JS/CSS,
+  and falls through any non-API / non-docs / non-static path to
+  `index.html` so React Router can resolve client-side routes
+  (`/projects/123`, `/web/`, etc.). Override the path via the
+  `CASEMAP_FRONTEND_DIST` env var; if the path is missing or has no
+  `index.html`, the server falls back to the legacy placeholder.
 - **feat(ws):** real-time status sync via WebSocket (server + frontend) —
   status changes from one tester propagate to every connected client in
   the same project within the same tab session.
@@ -16,7 +25,7 @@ All notable changes to casemap are documented here. Versions follow
 - **docs:** comprehensive Chinese user guide for QA testers and PMs
   (`docs/user-guide/`, 8 docs, ~14k chars) covering quickstart
   (offline / team), tester workflow, PM workflow, and troubleshooting.
-- **tests:** 262 tests total — 236 backend (pytest) + 26 frontend
+- **tests:** 273 tests total — 247 backend (pytest) + 26 frontend
   (vitest), all green.
 
 ## v1.0.0 (2026-10-07) — feature-complete for the original spec

@@ -13,7 +13,7 @@
   <a href="https://github.com/anomalyco/casemap/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" /></a>
   <img alt="Version" src="https://img.shields.io/badge/version-v1.1.0-blue" />
   <a href="https://github.com/anomalyco/casemap/actions/workflows/python-test.yml"><img alt="CI" src="https://github.com/anomalyco/casemap/actions/workflows/python-test.yml/badge.svg" /></a>
-  <img alt="Python tests" src="https://img.shields.io/badge/python%20tests-236%20passed-brightgreen" />
+  <img alt="Python tests" src="https://img.shields.io/badge/python%20tests-247%20passed-brightgreen" />
   <img alt="Frontend tests" src="https://img.shields.io/badge/frontend%20tests-26%20passed-brightgreen" />
 </p>
 
@@ -118,6 +118,17 @@ The Vite dev server proxies `/api/*` to the backend. For production:
 ```bash
 pnpm build             # tsc + vite → frontend/dist/
 ```
+
+**Production frontend serving.** After `pnpm build`, the FastAPI server
+auto-discovers `frontend/dist/` at startup and serves it as a single-page
+app: `/` returns `index.html`, `/assets/*` serves hashed JS / CSS, and any
+unknown path falls through to `index.html` so React Router can resolve
+client-side routes (`/projects/123`, `/web/`, etc.). The `/api/v1/*` REST
+API, `/docs`, `/openapi.json`, `/redoc`, and `/static` paths are unaffected.
+To override the dist location (e.g. when the build lives outside the repo),
+set `CASEMAP_FRONTEND_DIST=/custom/path` before starting `casemap serve`;
+if that path is missing or has no `index.html`, the server falls back to
+the legacy placeholder index.
 
 Pages: `/` (project list), `/projects/:id` (brain map), `/projects/:id/cases`
 (table), `/projects/:id/progress` (rollup), `/projects/:id/report` (printable).
