@@ -1,9 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { api, hasAdminToken } from '@/lib/api';
 import type { ProjectCreated } from '@/lib/types';
 
 export function useProjects() {
-  return useQuery({ queryKey: ['projects'], queryFn: () => api.listProjects() });
+  return useQuery({
+    queryKey: ['projects'],
+    queryFn: () => api.listProjects(),
+    enabled: hasAdminToken(),
+    retry: false,
+  });
 }
 
 export function useProject(projectId: string | undefined) {

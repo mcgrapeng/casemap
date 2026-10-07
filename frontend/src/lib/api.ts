@@ -20,6 +20,14 @@ export function getAdminToken(): string | null {
   return currentAdminToken;
 }
 
+const ADMIN_STORAGE_KEY = 'casemap.admin_token';
+
+export function hasAdminToken(): boolean {
+  if (currentAdminToken) return true;
+  if (typeof window === 'undefined') return false;
+  return !!window.localStorage.getItem(ADMIN_STORAGE_KEY);
+}
+
 export class ApiError extends Error {
   status: number;
   detail: string;
