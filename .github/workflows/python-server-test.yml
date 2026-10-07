@@ -1,0 +1,68 @@
+name: Python Server E2E
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - src/casemap/server/**
+      - tests/server/**
+  pull_request:
+    branches: [main, master]
+    paths:
+      - src/casemap/server/**
+      - tests/server/**
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  server-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+
+      - name: Sync dependencies
+        run: uv sync --frozen --all-extras
+
+      - name: Ruff
+        run: uv run ruff check src/ tests/
+
+      - name: Mypy
+        run: uv run mypy src/casemap
+
+      - name: Start server
+        run: |
+          nohup uv run casemap serve --port 8765 --db /tmp/test.db > /tmp/server.log 2>&1 &
+          echo $! > /tmp/server.pid
+
+      - name: Wait for boot
+        run: sleep 3
+
+      - name: Run e2e tests
+        run: uv run pytest tests/server/test_e2e.py -v
+        env:
+          CASEMAP_BASE_URL: http://127.0.0.1:8765
+
+      - name: Dump server log on failure
+        if: failure()
+        run: |
+          echo "===== server.log ====="
+          cat /tmp/server.log || true
+
+      - name: Kill server
+        if: always()
+        run: |
+          if [ -f /tmp/server.pid ]; then
+            kill "$(cat /tmp/server.pid)" 2>/dev/null || true
+          fi
+          pkill -f "casemap serve" 2>/dev/null || true

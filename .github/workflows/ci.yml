@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  workflow_run:
+    workflows: [Python Tests, Python Server E2E, Frontend Tests]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  aggregate:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion != 'skipped' }}
+    steps:
+      - name: Aggregate status
+        run: |
+          if [ "${{ github.event.workflow_run.conclusion }}" != "success" ]; then
+            echo "Upstream workflow ${{ github.event.workflow_run.name }} concluded with ${{ github.event.workflow_run.conclusion }}"
+            exit 1
+          fi
+          echo "Upstream workflow ${{ github.event.workflow_run.name }} succeeded."

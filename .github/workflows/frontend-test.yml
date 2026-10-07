@@ -1,0 +1,55 @@
+name: Frontend Tests
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - frontend/**
+  pull_request:
+    branches: [main, master]
+    paths:
+      - frontend/**
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        working-directory: frontend
+        run: pnpm tsc --noEmit
+
+      - name: Lint
+        working-directory: frontend
+        run: pnpm lint
+
+      - name: Test
+        working-directory: frontend
+        run: pnpm vitest run
+
+      - name: Build
+        working-directory: frontend
+        run: pnpm build
