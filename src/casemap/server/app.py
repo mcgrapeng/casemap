@@ -14,6 +14,7 @@ from casemap.server.db import get_engine
 from casemap.server.models import Base
 from casemap.server.routers import brain_map, cases, ci, projects, statuses
 from casemap.server.routers import specs as specs_router
+from casemap.server import ws as ws_router
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -59,6 +60,7 @@ def create_app() -> FastAPI:
     app.include_router(cases.router, prefix=api_prefix)
     app.include_router(statuses.router, prefix=api_prefix)
     app.include_router(ci.router, prefix=api_prefix)
+    app.include_router(ws_router.router, prefix=api_prefix)
 
     return app
 

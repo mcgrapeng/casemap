@@ -5,12 +5,13 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 
 from casemap.server.deps import CurrentProject, DbSession
 from casemap.server.models import Case
 from casemap.server.schemas import ProgressOut, StatusPatch
 from casemap.server.services import ci_service
+from casemap.server.ws import broadcast
 
 router = APIRouter(prefix="/projects/{project_id}", tags=["cases"])
 
@@ -64,6 +65,7 @@ def patch_status(
     case_id: str,
     payload: StatusPatch,
     db: DbSession,
+    bg: BackgroundTasks,
     _project: CurrentProject,
 ) -> dict[str, Any]:
     row = ci_service.update_case_status(
@@ -73,6 +75,23 @@ def patch_status(
         status_value=payload.status,
         note=payload.note or "",
         source=payload.source,
+    )
+    # Resolve to the public stable_id so the WS payload matches what the
+    # frontend already has (and what GET /cases returns under `id`).
+    public_id = ci_service.get_case(db, project_id, case_id).stable_id or row.case_id
+    # ponytail: broadcast via BackgroundTasks so the REST response is not
+    # delayed by WS sender backpressure. No-op if no clients are connected.
+    bg.add_task(
+        broadcast,
+        project_id,
+        {
+            "type": "status_changed",
+            "case_id": public_id,
+            "status": row.status,
+            "note": row.note,
+            "source": row.source,
+            "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+        },
     )
     return {
         "case_id": row.case_id,

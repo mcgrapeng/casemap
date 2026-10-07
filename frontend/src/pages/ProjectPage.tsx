@@ -21,6 +21,7 @@ import { useProject } from '@/hooks/useProjects';
 import { useCases } from '@/hooks/useCases';
 import { useProgress } from '@/hooks/useProgress';
 import { useSpecs, useGraph } from '@/hooks/useGraph';
+import { useStatusStream } from '@/hooks/useStatusStream';
 import { useToast } from '@/hooks/useToast';
 import { api } from '@/lib/api';
 import { useAuth } from '@/components/providers/ApiProvider';
@@ -32,6 +33,9 @@ export default function ProjectPage() {
   const specs = useSpecs(id);
   const cases = useCases(id);
   const progress = useProgress(id);
+  // ponytail: useStatusStream is a no-op when token is undefined (the hook
+  // guards). Mounting it once here keeps one WebSocket per project page.
+  useStatusStream(id, token ?? undefined);
 
   const latestSpec = specs.data?.[0];
   const graph = useGraph(id, latestSpec?.id);
