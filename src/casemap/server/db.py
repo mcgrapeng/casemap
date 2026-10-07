@@ -17,7 +17,8 @@ def _build_engine() -> Engine:
     # FastAPI's threadpool; for any non-sqlite URL the connect_args would
     # be ignored and is the right thing to omit.
     connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-    return create_engine(url, connect_args=connect_args, future=True)
+    # ponytail: SQLAlchemy 2.x removed `future=True` (2.0-style is the only API now).
+    return create_engine(url, connect_args=connect_args)
 
 
 # Module-level engine; tests swap this attribute to point at an isolated engine.
