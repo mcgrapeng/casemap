@@ -15,6 +15,25 @@
   <img alt="Frontend tests" src="https://img.shields.io/badge/frontend%20tests-18%20passed-brightgreen" />
 </p>
 
+<p align="center">
+  <a href="docs/user-guide/README.md"><img alt="📖 用户文档（QA/PM）" src="https://img.shields.io/badge/%F0%9F%93%96%20%E7%94%A8%E6%88%B7%E6%96%87%E6%A1%A3-中文-blue?style=for-the-badge" /></a>
+</p>
+
+<p align="center">
+  <strong>📖 用户文档：</strong>
+  <a href="docs/user-guide/README.md">中文用户指南</a>
+  ·
+  <a href="docs/user-guide/quickstart-offline.md">离线模式</a>
+  ·
+  <a href="docs/user-guide/quickstart-team.md">团队模式</a>
+  ·
+  <a href="docs/user-guide/tester-workflow.md">QA 工作流</a>
+  ·
+  <a href="docs/user-guide/pm-workflow.md">PM 工作流</a>
+  ·
+  <a href="docs/user-guide/troubleshooting.md">故障排查</a>
+</p>
+
 ## One-liner
 
 casemap parses OpenAPI / Swagger / Postman / Apifox JSON, generates a

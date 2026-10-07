@@ -15,4 +15,7 @@ build/
 .hypothesis
 .venv
 docs
+!docs/
+!docs/user-guide/
+!docs/user-guide/*.md
 .idea/
