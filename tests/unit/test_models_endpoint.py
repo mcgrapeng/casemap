@@ -38,6 +38,21 @@ class TestParameter:
         assert p.example == 10
         assert p.constraints["max"] == 100
 
+    # ---------- SP-5 v0.2 Minor: location is now a Literal of the 5 OpenAPI values ----
+
+    @pytest.mark.parametrize(
+        "loc",
+        ["path", "query", "header", "body", "formData"],
+    )
+    def test_valid_locations_accepted(self, loc):
+        p = Parameter(name="x", location=loc, type="string")
+        assert p.location == loc
+
+    @pytest.mark.parametrize("loc", ["", "cookie", "request", "INVALID"])
+    def test_invalid_locations_rejected(self, loc):
+        with pytest.raises(ValidationError):
+            Parameter(name="x", location=loc, type="string")
+
 
 class TestResponse:
     def test_construct(self):

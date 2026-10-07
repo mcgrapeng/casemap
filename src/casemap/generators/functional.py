@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import TypeVar
 
 from pydantic import BaseModel, Field
@@ -14,6 +15,16 @@ from casemap.models.testcase import TestCase
 
 _log = get_logger("generators.functional")
 T = TypeVar("T", bound=BaseModel)
+
+# ponytail: defense-in-depth against prompt-injection → XSS chain. Even with the
+# renderer-level escape (HTML/JSON), a malicious spec can still feed `<script>` or
+# control chars through the prompt and into the structured TestCase. Removing them
+# at the seam ensures corrupted text never makes it past this module. Keep cheap.
+_DANGEROUS = re.compile(r"[<>&]|[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
+def _sanitize(text: str) -> str:
+    return _DANGEROUS.sub("", text)
 
 
 class _EnrichedCase(BaseModel):
@@ -56,11 +67,13 @@ class FunctionalGenerator:
         for orig in structural_cases:
             if orig.id in enriched_map:
                 enr = enriched_map[orig.id]
+                title_clean = _sanitize(enr.title.strip()) or orig.title
+                desc_clean = _sanitize(enr.description.strip()) or orig.description
                 merged.append(
                     orig.model_copy(
                         update={
-                            "title": enr.title.strip() or orig.title,
-                            "description": enr.description.strip() or orig.description,
+                            "title": title_clean,
+                            "description": desc_clean,
                         }
                     )
                 )

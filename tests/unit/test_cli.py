@@ -83,3 +83,35 @@ def test_resume_advises_generate(tmp_path):
     )
     # Resume is a stub - we expect it to print guidance and exit non-zero
     assert result.exit_code != 0
+
+
+# ---------- SP-5 v0.2 Minor: --verbose / --quiet log-level flags ----------
+
+
+def test_verbose_sets_log_level_info(monkeypatch):
+    from click.testing import CliRunner
+
+    from casemap.cli import main
+
+    monkeypatch.delenv("CASEMAP_LOG_LEVEL", raising=False)
+    runner = CliRunner()
+    # Invoke a real subcommand so the group callback runs.
+    result = runner.invoke(main, ["-v", "parsers", "list"])
+    assert result.exit_code == 0, result.output
+    import os
+
+    assert os.environ.get("CASEMAP_LOG_LEVEL") == "INFO"
+
+
+def test_quiet_sets_log_level_warning(monkeypatch):
+    from click.testing import CliRunner
+
+    from casemap.cli import main
+
+    monkeypatch.delenv("CASEMAP_LOG_LEVEL", raising=False)
+    runner = CliRunner()
+    result = runner.invoke(main, ["-q", "parsers", "list"])
+    assert result.exit_code == 0, result.output
+    import os
+
+    assert os.environ.get("CASEMAP_LOG_LEVEL") == "WARNING"

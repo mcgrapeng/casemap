@@ -108,6 +108,35 @@ class TestFileCache:
             f"cache grew to {len(on_disk)} entries, cap is {FileCache.MAX_ENTRIES}"
         )
 
+    def test_get_is_lazy_and_in_memory(self, tmp_path: Path):
+        """SP-5 v0.2: cache.get() must NOT re-read the file on every call.
+        Lazy-load on first access; subsequent gets use the in-memory dict.
+        Verifiable by mutating the on-disk file after first access: in-memory
+        cache must continue returning the value it loaded, NOT pick up the
+        disk-side change (the disk file is the backing store for durability,
+        not the source-of-truth on every read).
+        """
+        path = tmp_path / "mem.json"
+        cache = FileCache(path)
+        cache.set("k", "v1")
+        # First get loads into memory
+        assert cache.get("k") == "v1"
+        # Mutate the file behind the cache's back
+        import json as _json
+
+        path.write_text(_json.dumps({"k": "v-from-disk-after-load"}))
+        # In-memory value still wins
+        assert cache.get("k") == "v1"
+
+    def test_set_updates_in_memory_view(self, tmp_path: Path):
+        """A set() must be visible to the next get() without needing to re-read."""
+        path = tmp_path / "mem.json"
+        cache = FileCache(path)
+        cache.set("a", 1)
+        assert cache.get("a") == 1
+        cache.set("a", 2)
+        assert cache.get("a") == 2
+
 
 class FakeProvider:
     """For testing things that consume an LLMProvider."""
@@ -130,3 +159,28 @@ class FakeProvider:
 def test_provider_protocol_satisfied():
     p = FakeProvider()
     assert isinstance(p, LLMProvider)
+
+
+# ---------- SP-5 v0.2 Minor: backtick stripping in OpenAI compat provider ----------
+
+
+class TestStripJsonFence:
+    """The provider strips only outer ``` fences, not all backticks."""
+
+    def test_plain_json_passthrough(self):
+        from casemap.llm.openai_compat import _strip_json_fence
+        assert _strip_json_fence('{"value": "hi"}') == '{"value": "hi"}'
+
+    def test_json_fence_stripped(self):
+        from casemap.llm.openai_compat import _strip_json_fence
+        assert _strip_json_fence('```json\n{"value": "hi"}\n```') == '{"value": "hi"}'
+
+    def test_plain_fence_stripped(self):
+        from casemap.llm.openai_compat import _strip_json_fence
+        assert _strip_json_fence('```\n{"value": "hi"}\n```') == '{"value": "hi"}'
+
+    def test_inner_backticks_preserved(self):
+        from casemap.llm.openai_compat import _strip_json_fence
+        # A description containing `foo` style inner backticks should NOT be touched.
+        raw = '`raw value with `inner` backticks`'
+        assert _strip_json_fence(raw) == raw

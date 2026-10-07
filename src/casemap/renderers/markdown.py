@@ -13,11 +13,19 @@ _TYPE_LABEL = {
 }
 
 
+# ponytail: a `|` inside a table cell breaks column alignment. Escape `|`
+# to `\|` so titles like "search | filter" stay in the 标题 column. Keep
+# cheap; only pipe matters because other Markdown special chars (asterisk,
+# bracket) have no effect inside a table cell.
+def _esc(text: str) -> str:
+    return text.replace("|", r"\|")
+
+
 class MarkdownRenderer:
     """Render a TestGraph as a flat markdown decision table."""
 
     def render(self, graph: TestGraph) -> str:
-        lines = [f"# {graph.title}", ""]
+        lines = [f"# {_esc(graph.title)}", ""]
         if not graph.nodes:
             lines.append("_（暂无测试用例）_")
             return "\n".join(lines) + "\n"
@@ -25,5 +33,7 @@ class MarkdownRenderer:
         lines.append("|---------|------|------|------|")
         for n in graph.nodes:
             label = _TYPE_LABEL.get(n.case.type, n.case.type.value)
-            lines.append(f"| `{n.id}` | {label} | {n.case.title} | {n.case.endpoint_ref or ''} |")
+            lines.append(
+                f"| `{_esc(n.id)}` | {label} | {_esc(n.case.title)} | {_esc(n.case.endpoint_ref or '')} |"
+            )
         return "\n".join(lines) + "\n"

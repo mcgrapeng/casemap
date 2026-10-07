@@ -11,6 +11,7 @@ Works with any service exposing OpenAI's HTTP API:
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import TypeVar
 
@@ -24,6 +25,19 @@ from casemap.llm.config import LLMConfig
 
 _log = get_logger("llm.openai_compat")
 T = TypeVar("T", bound=BaseModel)
+
+# ponytail: anchor regex strips only the outer triple-fence (with optional
+# "json" language tag), preserving any backticks that are content. The previous
+# `str.strip("`")` ate every backtick in the response, including legitimate
+# inline-code samples the LLM might have included.
+_FENCE_RE = re.compile(r"^```(?:json)?\s*\n|\n```\s*$", re.MULTILINE)
+
+
+def _strip_json_fence(raw: str) -> str:
+    """Strip outer ``` / ```json fences only. Inner backticks are kept."""
+    cleaned = raw.strip()
+    cleaned = _FENCE_RE.sub("", cleaned)
+    return cleaned.strip()
 
 # Strict prompt that enforces business-language output (non-technical users).
 # See spec requirement #10: outputs must be readable by non-technical readers
@@ -90,11 +104,7 @@ class OpenAICompatProvider:
     ) -> T:
         raw = await self.complete(prompt, system=system)
         # Try to parse JSON from the response; LLM may wrap in markdown fences.
-        cleaned = raw.strip()
-        if cleaned.startswith("```"):
-            cleaned = cleaned.strip("`")
-            if cleaned.startswith("json"):
-                cleaned = cleaned[4:]
+        cleaned = _strip_json_fence(raw)
         try:
             data = json.loads(cleaned)
             return schema.model_validate(data)

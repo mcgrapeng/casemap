@@ -23,9 +23,37 @@ from casemap.renderers.html_self import HTMLSelfRenderer
 _log = get_logger("cli")
 
 
+def _apply_log_flags(verbose: bool, quiet: bool) -> None:
+    """Translate CLI verbosity flags into CASEMAP_LOG_LEVEL.
+
+    Set BEFORE get_logger() is invoked by any subcommand, so the new level
+    takes effect on every logger in the casemap namespace. Last-write-wins
+    if both flags are given (it's a CLI misuse, not worth erroring).
+    """
+    if verbose:
+        os.environ["CASEMAP_LOG_LEVEL"] = "INFO"
+    elif quiet:
+        os.environ["CASEMAP_LOG_LEVEL"] = "WARNING"
+
+
 @click.group()
-def main() -> None:
+@click.option(
+    "-v",
+    "--verbose",
+    is_flag=True,
+    help="Enable INFO-level logging (sets CASEMAP_LOG_LEVEL=INFO)",
+)
+@click.option(
+    "-q",
+    "--quiet",
+    is_flag=True,
+    help="Restrict logging to WARNING and above (sets CASEMAP_LOG_LEVEL=WARNING)",
+)
+@click.pass_context
+def main(ctx: click.Context, verbose: bool, quiet: bool) -> None:
     """casemap - 功能测试用例图管理系统."""
+    _apply_log_flags(verbose, quiet)
+    ctx.ensure_object(dict)
 
 
 @main.command()

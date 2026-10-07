@@ -72,3 +72,39 @@ def test_empty_graph_placeholder():
     assert "# empty" in md
     # Empty placeholder so the table is not silently broken
     assert "暂无" in md or "empty" in md.lower() or "|" not in md or md.count("|") < 4
+
+
+# ---------- SP-5 v0.2 Minor: title with | corrupts markdown table ----------
+
+
+def test_pipe_in_title_is_escaped():
+    """A title containing `|` must be escaped to `\\|` in markdown so the
+    table column alignment survives. Without escape, a stray `|` would split
+    the row into an extra column.
+    """
+    g = TestGraph(
+        title="t",
+        nodes=[
+            TestNode(
+                id="a",
+                case=TestCase(id="a", type=CaseType.POSITIVE, title="a | b"),
+            ),
+            TestNode(
+                id="c",
+                case=TestCase(
+                    id="c",
+                    type=CaseType.POSITIVE,
+                    title="c",
+                    endpoint_ref="GET /x | y",
+                ),
+            ),
+        ],
+    )
+    md = MarkdownRenderer().render(g)
+    # The title's pipe is escaped - we should see `a \| b` somewhere
+    assert "a \\| b" in md
+    # The endpoint_ref's pipe is also escaped
+    assert "GET /x \\| y" in md
+    # And the table still has exactly 4 columns per row (header alignment)
+    header_row = next(line for line in md.split("\n") if line.startswith("| 用例 ID"))
+    assert header_row.count("|") == 5  # 4 columns → 5 pipes including edges

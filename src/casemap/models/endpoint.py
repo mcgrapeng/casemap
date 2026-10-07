@@ -6,7 +6,7 @@ All parsers (OpenAPI, Postman, apifox) must produce Endpoint objects with this s
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -23,13 +23,20 @@ class HttpMethod(str, Enum):
     OPTIONS = "OPTIONS"
 
 
+# ponytail: Literal over Enum for Parameter.location keeps this field a plain
+# string (matches OpenAPI's canonical set), so JSON round-trips stay clean and
+# parsers can pass raw strings without coercion. Invalid locations fail at model
+# validation rather than silently passing bad strings downstream.
+ParameterLocation = Literal["path", "query", "header", "body", "formData"]
+
+
 class Parameter(BaseModel):
     """A single API parameter (query, path, header, body, form)."""
 
     model_config = ConfigDict(extra="forbid")
 
     name: str
-    location: str  # "path" | "query" | "header" | "body" | "formData"
+    location: ParameterLocation
     type: str  # simplified type: "string" | "integer" | "number" | "boolean" | "array" | "object"
     required: bool = False
     description: str = ""

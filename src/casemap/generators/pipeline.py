@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections import defaultdict
 from typing import Any
 
 from casemap._internal.logger import get_logger
@@ -61,7 +62,10 @@ class GenerationPipeline:
         out: list[TestCase] = []
         for c in cases:
             s = statuses.get(c.id)
-            if s and s in TestStatus._value2member_map_:
+            # ponytail: TestStatus.__members__ is the public API for membership;
+            # _value2member_map_ is a private pydantic detail that breaks on
+            # version bumps. ("__members__" maps name→member; check values.)
+            if s and s in {m.value for m in TestStatus}:
                 out.append(c.model_copy(update={"status": TestStatus(s)}))
             else:
                 out.append(c)
@@ -74,11 +78,15 @@ class GenerationPipeline:
         endpoints: list[Endpoint],
     ) -> TestGraph:
         nodes = [TestNode(id=c.id, case=c) for c in cases]
-        # Simple edges: group cases by endpoint_ref, connect in order
+        # ponytail: pre-group by endpoint_ref so each endpoint's lookup is O(1)
+        # instead of scanning all N nodes. Total work O(N+E) rather than O(N·E).
+        by_ref: dict[str, list[TestNode]] = defaultdict(list)
+        for n in nodes:
+            by_ref[n.case.endpoint_ref or ""].append(n)
         edges: list[Edge] = []
         for ep in endpoints:
             ref = f"{ep.method} {ep.path}"
-            ep_cases = [n for n in nodes if n.case.endpoint_ref == ref]
+            ep_cases = by_ref.get(ref, [])
             for i in range(len(ep_cases) - 1):
                 edges.append(Edge(source=ep_cases[i].id, target=ep_cases[i + 1].id))
         return TestGraph(
@@ -98,4 +106,17 @@ def run_pipeline(
     pipeline = GenerationPipeline(llm=llm)
     if llm is None:
         return pipeline.run(endpoints, **kwargs)
+    # ponytail: asyncio.run() cannot be called from a running event loop
+    # (Jupyter, async tests). Detect that case and point the user at
+    # `await pipeline.run_async(...)` instead of letting the cryptic
+    # RuntimeError bubble up.
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        pass  # no running loop - asyncio.run is safe
+    else:
+        raise RuntimeError(
+            "run_pipeline() called from a running event loop. "
+            "Use `await pipeline.run_async(...)` directly instead."
+        )
     return asyncio.run(pipeline.run_async(endpoints, **kwargs))
