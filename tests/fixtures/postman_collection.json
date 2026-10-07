@@ -1,0 +1,43 @@
+{
+  "info": {
+    "name": "Sample",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "List users",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://api.example.com/users?limit=10",
+          "query": [{"key": "limit", "value": "10"}]
+        },
+        "description": "Get a list of users"
+      }
+    },
+    {
+      "name": "Create user",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "https://api.example.com/users"},
+        "body": {"mode": "raw", "raw": "{\"name\":\"x\"}"},
+        "description": "Create a user"
+      }
+    },
+    {
+      "name": "Group",
+      "item": [
+        {
+          "name": "Get user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "https://api.example.com/users/1"}
+          }
+        }
+      ]
+    }
+  ]
+}
