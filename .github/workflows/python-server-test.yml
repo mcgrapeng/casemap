@@ -102,8 +102,8 @@ jobs:
       - name: Wait for boot
         run: sleep 3
 
-      - name: Run API e2e tests (httpx-based)
-        run: uv run pytest tests/server/test_e2e.py -v -m "not slow"
+      - name: Run API e2e script (httpx-based; not a pytest module)
+        run: uv run python tests/server/test_e2e.py
         env:
           CASEMAP_BASE_URL: http://127.0.0.1:8765
 
