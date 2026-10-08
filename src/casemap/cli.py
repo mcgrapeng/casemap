@@ -5,7 +5,9 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import subprocess
 import sys
+import webbrowser
 from pathlib import Path
 from typing import Any
 
@@ -213,6 +215,147 @@ def serve(host: str, port: int, db_url: str | None, reload: bool) -> None:
     from casemap.server.app import app  # noqa: PLC0415
 
     uvicorn.run(app, host=host, port=port, reload=reload)
+
+
+# ponytail: aliases registered after the underlying commands so the original
+# callbacks stay the single point of behavior. Same Command object, two names.
+main.add_command(generate, name="brain")
+main.add_command(generate, name="html")
+main.add_command(serve, name="ui")
+main.add_command(serve, name="start")
+
+
+_DEFAULT_TOKEN_PAGE = "~/.casemap/admin_token.html"
+_TOKEN_LOCALSTORAGE_KEY = "casemap.admin_token"
+
+
+def _token_save_html(token: str) -> str:
+    """HTML page that writes *token* to localStorage on open.
+
+    The casemap frontend reads `casemap.admin_token` from localStorage on its
+    admin-gated endpoints; opening this file in a browser stores it there so
+    the user doesn't have to type it into the UI every session.
+    """
+    payload = json.dumps(token)
+    return (
+        "<!DOCTYPE html>\n"
+        "<html><head><meta charset=\"utf-8\"><title>Save casemap admin token</title>"
+        "</head><body>\n"
+        f"<script>localStorage.setItem({json.dumps(_TOKEN_LOCALSTORAGE_KEY)}, {payload});"
+        "document.body.textContent='Saved admin token to localStorage. You can close this tab.';"
+        "</script>\n"
+        "</body></html>\n"
+    )
+
+
+def _spawn_serve(host: str, port: int) -> subprocess.Popen[bytes]:
+    """Spawn `casemap serve` detached; returns the Popen handle."""
+    return subprocess.Popen(  # noqa: S603  (intentional detached background spawn)
+        [sys.executable, "-m", "casemap.cli", "serve", "--host", host, "--port", str(port)],
+        start_new_session=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
+def _open_browser(url: str) -> None:
+    webbrowser.open(url)
+
+
+@main.command()
+@click.option("--admin-token", default=None, help="Admin token (prompted if omitted)")
+@click.option(
+    "--token-save-path",
+    default=_DEFAULT_TOKEN_PAGE,
+    type=click.Path(),
+    show_default=True,
+    help="Where to write the localStorage-setter HTML page",
+)
+@click.option(
+    "--start-server/--no-start-server",
+    default=True,
+    help="Spawn the casemap server in the background after setup",
+)
+@click.option(
+    "--open-browser/--no-open-browser",
+    default=True,
+    help="Open the UI in a browser after the server starts",
+)
+@click.option("--host", default="127.0.0.1", show_default=True, help="Server bind host")
+@click.option("--port", default=8765, type=int, show_default=True, help="Server bind port")
+@click.option(
+    "--non-interactive",
+    is_flag=True,
+    help="Skip prompts (use only the supplied flags / defaults)",
+)
+def init(
+    admin_token: str | None,
+    token_save_path: str,
+    start_server: bool,
+    open_browser: bool,
+    host: str,
+    port: int,
+    non_interactive: bool,
+) -> None:
+    """Interactive first-time setup wizard."""
+    click.echo("Welcome to casemap — let's get you set up.\n")
+
+    # --- Admin token -------------------------------------------------------
+    token_from_prompt = False
+    if admin_token is None and not non_interactive:
+        typed = click.prompt(
+            "What's your admin token? (press Enter to skip)",
+            default="",
+            show_default=False,
+        )
+        stripped = typed.strip()
+        if stripped:
+            admin_token = stripped
+            token_from_prompt = True
+
+    if admin_token:
+        # If the token came from a prompt, also confirm where to save it.
+        # When the user supplies both --admin-token and --token-save-path via
+        # the CLI we skip this and trust the supplied values.
+        if token_from_prompt and not non_interactive:
+            token_save_path = click.prompt(
+                "Where should we save your admin token?",
+                default=token_save_path,
+                show_default=False,
+            )
+        save_path = Path(token_save_path).expanduser()
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        save_path.write_text(_token_save_html(admin_token), encoding="utf-8")
+        click.echo(f"\nWrote admin-token page → {save_path}")
+        click.echo(
+            "Open that file in your browser once to write the token to localStorage "
+            "(key: casemap.admin_token)."
+        )
+    else:
+        click.echo("No admin token provided — skipping localStorage save.")
+
+    # --- Server ------------------------------------------------------------
+    if start_server and not non_interactive and not click.confirm(
+        "Start the server now?", default=True
+    ):
+        start_server = False
+
+    if start_server:
+        url = f"http://{host}:{port}"
+        click.echo(f"\nStarting casemap server at {url} (background) ...")
+        try:
+            _spawn_serve(host, port)
+        except OSError as e:
+            click.echo(f"Failed to spawn server: {e}", err=True)
+            sys.exit(1)
+        click.echo(f"Server detached. Browse to: {url}")
+
+        if open_browser and not non_interactive and click.confirm(
+            "Open browser to UI?", default=True
+        ):
+            _open_browser(url)
+    else:
+        click.echo("\nSkipped starting server. Run `casemap serve` when ready.")
 
 
 if __name__ == "__main__":
