@@ -57,8 +57,13 @@ jobs:
         working-directory: frontend
         run: pnpm build
 
-      - name: Install Playwright Chromium
-        run: uv run playwright install chromium
+      - name: Install Playwright Chromium + headless shell
+        # tests/e2e/test_full_flow.py uses p.chromium.launch(headless=True),
+        # which on Playwright 1.49+ needs the headless shell binary
+        # (chromium_headless_shell-*), not the full chromium browser. Install
+        # both so the test can find the right binary.
+        run: |
+          uv run playwright install chromium chromium-headless-shell
 
       - name: Ruff
         run: uv run ruff check src/ tests/
