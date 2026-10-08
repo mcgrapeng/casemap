@@ -49,11 +49,41 @@ jobs:
       - name: Sync dependencies
         run: uv sync --frozen --all-extras
 
-      - name: Install frontend deps + build dist
+      - name: Create Vite entry HTML (gitignored by *.html in this repo)
+        working-directory: frontend
         run: |
-          cd frontend
-          pnpm install --frozen-lockfile
-          pnpm build
+          cat > index.html <<'HTML'
+          <!doctype html>
+          <html lang="en" class="dark">
+            <head>
+              <meta charset="UTF-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+              <title>casemap</title>
+            </head>
+            <body>
+              <div id="root"></div>
+              <script type="module" src="/src/main.tsx"></script>
+            </body>
+          </html>
+          HTML
+
+      - name: Create static placeholder index.html (gitignored)
+        run: |
+          mkdir -p src/casemap/server/static
+          cat > src/casemap/server/static/index.html <<'HTML'
+          <!DOCTYPE html>
+          <html lang="en"><head><meta charset="UTF-8"><title>casemap server</title></head>
+          <body><h1>casemap server</h1><p>REST API at <code>/api/v1/...</code>.
+          OpenAPI docs: <a href="/docs">/docs</a>.</p></body></html>
+          HTML
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        working-directory: frontend
+        run: pnpm build
 
       - name: Install Playwright Chromium
         run: uv run playwright install chromium
