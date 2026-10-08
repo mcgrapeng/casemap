@@ -96,7 +96,7 @@ jobs:
 
       - name: Start server
         run: |
-          nohup uv run casemap serve --port 8765 --db /tmp/test.db > /tmp/server.log 2>&1 &
+          nohup uv run casemap serve --port 8765 --db "sqlite:////tmp/test.db" > /tmp/server.log 2>&1 &
           echo $! > /tmp/server.pid
 
       - name: Wait for boot
