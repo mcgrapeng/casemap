@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Upload, Loader2, Search, FileText } from 'lucide-react';
 import { Shell } from '@/components/layout/Shell';
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -29,6 +30,7 @@ import { useAuth } from '@/components/providers/ApiProvider';
 export default function ProjectPage() {
   const { id = '' } = useParams<{ id: string }>();
   const { token } = useAuth();
+  const qc = useQueryClient();
   const project = useProject(id);
   const specs = useSpecs(id);
   const cases = useCases(id);
@@ -38,7 +40,7 @@ export default function ProjectPage() {
   useStatusStream(id, token ?? undefined);
 
   const latestSpec = specs.data?.[0];
-  const graph = useGraph(id, latestSpec?.id);
+  const graph = useGraph(id, latestSpec?.graph_id ?? latestSpec?.id);
   const { toast } = useToast();
 
   const [selectedCaseId, setSelectedCaseId] = React.useState<string | null>(null);
@@ -59,6 +61,11 @@ export default function ProjectPage() {
       toast({ title: 'Spec uploaded', description: 'Generating brain map…' });
       specs.refetch();
       cases.refetch();
+      // ponytail: invalidate progress + graph alongside cases so the top bar
+      // and brain map re-render in the same tick — without this the progress
+      // bar stays at 0/0 because progress is its own query keyed on the
+      // project, not on the spec list.
+      qc.invalidateQueries({ queryKey: ['projects', id, 'progress'] });
     } catch (err) {
       toast({
         title: 'Upload failed',

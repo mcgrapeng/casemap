@@ -141,11 +141,75 @@ def render_graph_outputs(db: Session, project_id: str, graph_id: str) -> dict[st
                 "status": case.status.status,
                 "note": case.status.note,
             }
+
+    # ponytail: enrich the SPA-facing graph payload with the layout fields the
+    # React brain-map component expects (x/y/width/height + flattened
+    # type/title/tags at the node level). Computed at request time so the
+    # stored graph_data stays minimal and the layout algorithm stays in one
+    # place (SVGRenderer). One extra import; cached on next request via
+    # React Query in the SPA.
+    from casemap.models.graph import TestGraph as _ModelGraph
+    from casemap.renderers.svg import (
+        COLUMN_WIDTH,
+        NODE_HEIGHT,
+        NODE_WIDTH,
+        PADDING,
+        ROW_HEIGHT,
+        SVGRenderer,
+    )
+
+    raw = json.loads(row.graph_data)
+    model_graph = _ModelGraph.model_validate(raw)
+    positions = SVGRenderer()._compute_positions(model_graph.nodes)
+    flat_nodes = []
+    for n in raw["nodes"]:
+        x, y = positions.get(n["id"], (PADDING, PADDING))
+        flat_nodes.append(
+            {
+                "id": n["id"],
+                "type": n["case"]["type"],
+                "title": n["case"]["title"],
+                "tags": n["case"].get("tags", []),
+                "endpoint_ref": n["case"].get("endpoint_ref"),
+                "x": x,
+                "y": y,
+                "width": NODE_WIDTH,
+                "height": NODE_HEIGHT,
+            }
+        )
+    flat_edges = [
+        {"from": e.get("source") or e.get("from"), "to": e.get("target") or e.get("to")}
+        for e in raw["edges"]
+    ]
+    groups: set[str] = {
+        (n["case"].get("tags", [None]) or [None])[0] or "untagged" for n in raw["nodes"]
+    }
+    rows_per_group = max(
+        (
+            sum(
+                1
+                for n in raw["nodes"]
+                if ((n["case"].get("tags", [None]) or [None])[0] or "untagged") == g
+            )
+            for g in groups
+        ),
+        default=1,
+    )
+    enriched_graph = {
+        "nodes": flat_nodes,
+        "edges": flat_edges,
+        "width": PADDING * 2 + max(len(groups), 1) * COLUMN_WIDTH,
+        "height": PADDING * 2 + rows_per_group * ROW_HEIGHT,
+    }
+
     return {
         "svg": row.svg_content,
         "html": row.html_content,
         "graph_data": row.graph_data,
         "statuses": statuses_map,
+        # ponytail: SPA-facing enriched payload lives alongside the raw model
+        # dump so the legacy /graphs/{id}/svg + /html renderers keep working.
+        "enriched_graph": enriched_graph,
     }
 
 

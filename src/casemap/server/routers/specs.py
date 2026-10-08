@@ -43,7 +43,7 @@ async def upload_spec(
 
 @router.get("", response_model=list[SpecOut])
 def list_specs(project_id: str, db: DbSession, _project: CurrentProject) -> list[SpecOut]:
-    from casemap.server.models import Spec  # noqa: PLC0415
+    from casemap.server.models import Graph, Spec  # noqa: PLC0415
 
     rows = (
         db.query(Spec)
@@ -51,15 +51,26 @@ def list_specs(project_id: str, db: DbSession, _project: CurrentProject) -> list
         .order_by(Spec.created_at.desc())
         .all()
     )
-    return [
-        SpecOut(
-            id=r.id,
-            project_id=r.project_id,
-            format=r.format,
-            created_at=r.created_at,
+    out: list[SpecOut] = []
+    for r in rows:
+        # ponytail: one round-trip per spec is fine for v1.1 (≤ handful of
+        # specs per project). Bulk-version indexing lands when the count grows.
+        graph = (
+            db.query(Graph)
+            .filter(Graph.spec_id == r.id)
+            .order_by(Graph.created_at.desc())
+            .first()
         )
-        for r in rows
-    ]
+        out.append(
+            SpecOut(
+                id=r.id,
+                project_id=r.project_id,
+                format=r.format,
+                created_at=r.created_at,
+                graph_id=graph.id if graph else None,
+            )
+        )
+    return out
 
 
 @router.get("/{spec_id}")

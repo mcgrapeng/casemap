@@ -18,14 +18,14 @@ export default function ReportPage() {
   const latestSpec = specs.data?.[0];
 
   const reportUrl = latestSpec
-    ? `/api/v1/projects/${id}/graphs/${latestSpec.id}/report`
+    ? `/api/v1/projects/${id}/graphs/${latestSpec.graph_id ?? latestSpec.id}/report`
     : null;
   const fullUrl = reportUrl && token ? `${reportUrl}?_t=${encodeURIComponent(token.slice(0, 12))}` : reportUrl;
 
   const downloadMarkdown = async () => {
     if (!latestSpec) return;
     try {
-      const res = await fetch(`/api/v1/projects/${id}/graphs/${latestSpec.id}/report`, {
+      const res = await fetch(`/api/v1/projects/${id}/graphs/${latestSpec.graph_id ?? latestSpec.id}/report`, {
         headers: { Authorization: `Bearer ${token ?? ''}` },
       });
       const html = await res.text();

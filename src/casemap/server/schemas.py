@@ -48,6 +48,10 @@ class SpecOut(BaseModel):
     project_id: str
     format: str
     created_at: datetime
+    # ponytail: graph_id exposed so the SPA can resolve the brain-map endpoint
+    # without a second round-trip. One spec currently maps to one graph; if
+    # multi-version support lands, this stays the "latest graph" pointer.
+    graph_id: str | None = None
 
 
 class SpecCreated(BaseModel):

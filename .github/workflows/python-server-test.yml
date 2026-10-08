@@ -6,11 +6,21 @@ on:
     paths:
       - src/casemap/server/**
       - tests/server/**
+      - tests/e2e/**
+      - frontend/src/**
+      - frontend/package.json
+      - frontend/pnpm-lock.yaml
+      - .github/workflows/python-server-test.yml
   pull_request:
     branches: [main, master]
     paths:
       - src/casemap/server/**
       - tests/server/**
+      - tests/e2e/**
+      - frontend/src/**
+      - frontend/package.json
+      - frontend/pnpm-lock.yaml
+      - .github/workflows/python-server-test.yml
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -31,8 +41,22 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Sync dependencies
         run: uv sync --frozen --all-extras
+
+      - name: Install frontend deps + build dist
+        run: |
+          cd frontend
+          pnpm install --frozen-lockfile
+          pnpm build
+
+      - name: Install Playwright Chromium
+        run: uv run playwright install chromium
 
       - name: Ruff
         run: uv run ruff check src/ tests/
@@ -48,10 +72,18 @@ jobs:
       - name: Wait for boot
         run: sleep 3
 
-      - name: Run e2e tests
+      - name: Run API e2e tests (httpx-based)
         run: uv run pytest tests/server/test_e2e.py -v
         env:
           CASEMAP_BASE_URL: http://127.0.0.1:8765
+
+      - name: Run Playwright UI e2e tests
+        # ponytail: tests/e2e/ is marked @pytest.mark.slow; gated here so
+        # fast PR checks stay green even if Chromium install is flaky. Manual
+        # nightly cron or `pytest -m slow` opt-in still runs it.
+        run: uv run pytest tests/e2e/ -v -m slow
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: /root/.cache/ms-playwright
 
       - name: Dump server log on failure
         if: failure()

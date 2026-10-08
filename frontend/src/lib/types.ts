@@ -32,6 +32,9 @@ export interface SpecOut {
   project_id: string;
   format: string;
   created_at: string;
+  // ponytail: server populates graph_id so the SPA can resolve the brain-map
+  // endpoint without a second round-trip. Optional for legacy rows.
+  graph_id?: string;
 }
 
 export interface SpecCreated {
