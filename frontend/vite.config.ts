@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// ci: trigger frontend-test.yml workflow validation (no behavior change)
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
