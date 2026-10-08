@@ -85,9 +85,13 @@ jobs:
           CASEMAP_BASE_URL: http://127.0.0.1:8765
 
       - name: Run Playwright UI e2e tests
+        # No PLAYWRIGHT_BROWSERS_PATH override — let Playwright use its default
+        # ($HOME/.cache/ms-playwright = /home/runner/.cache/ms-playwright on
+        # GH Actions), which is exactly where `playwright install` put the
+        # browsers above. The previous hardcoded /root/.cache/... pointed at
+        # a path the runner user can't write, so the test looked in the wrong
+        # place and the install was effectively wasted.
         run: uv run pytest tests/e2e/ -v -m slow
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: /root/.cache/ms-playwright
 
       - name: Dump server log on failure
         if: failure()
