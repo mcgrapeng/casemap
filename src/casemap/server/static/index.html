@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>casemap server</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif;
+         max-width: 720px; margin: 4rem auto; padding: 2rem;
+         color: #0f172a; }
+  h1 { font-size: 1.75rem; margin: 0 0 0.5rem; }
+  p { color: #475569; line-height: 1.6; }
+  code { background: #f1f5f9; padding: 0.15rem 0.4rem; border-radius: 4px; }
+  a { color: #2563eb; }
+</style>
+</head>
+<body>
+<h1>casemap server</h1>
+<p>The REST API is at <code>/api/v1/...</code>. OpenAPI docs:
+<a href="/docs">/docs</a>.</p>
+<p>To create a project:</p>
+<pre><code>curl -X POST http://localhost:8765/api/v1/projects \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "acme"}'</code></pre>
+<p>Use the returned <code>project_api_key</code> as a Bearer token for
+project-scoped endpoints.</p>
+</body>
+</html>

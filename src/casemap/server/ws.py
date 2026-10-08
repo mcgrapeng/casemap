@@ -22,11 +22,10 @@ import json
 from collections import defaultdict
 from typing import Any
 
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 
 from casemap.server.auth import find_project_by_token
-from casemap.server.db import get_db
+from casemap.server.deps import DbSession
 
 # project_id -> set of connected WebSockets (one client may have multiple tabs)
 _connections: dict[str, set[WebSocket]] = defaultdict(set)
@@ -70,8 +69,8 @@ async def broadcast(project_id: str, message: dict[str, Any]) -> None:
 async def ws_endpoint(
     websocket: WebSocket,
     project_id: str,
+    db: DbSession,
     token: str | None = None,
-    db: Session = Depends(get_db),
 ) -> None:
     # ponytail: WebSocket cannot raise HTTPException from a Depends() in the way
     # REST routes can — we authenticate inline and close with 1008 (policy

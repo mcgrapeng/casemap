@@ -9,8 +9,21 @@ htmlcov/
 dist/
 build/
 .casemap_cache.json
+
+# Ignore generated *.html by default. We do NOT want to track built artifacts
+# or downloaded swagger/redoc HTML. Track only the Vite entry and the server
+# placeholder explicitly below.
 *.html
 !examples/**/*.html
+!frontend/index.html
+!src/casemap/server/static/index.html
+
+# frontend/dist/ is the Vite production build output. It is large (hashed
+# JS/CSS chunks) and deterministic from `pnpm build` against frontend/index.html
+# + frontend/src/, so we keep it out of git. The server falls back to
+# src/casemap/server/static/index.html when dist/ is absent, so the app still
+# boots without a build. To serve the real UI, run `pnpm build` once locally.
+
 .superpowers
 .hypothesis
 .venv
