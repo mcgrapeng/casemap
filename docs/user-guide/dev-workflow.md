@@ -11,12 +11,26 @@
 
 ---
 
+## 0. CASEMAP CLI 命令速查
+
+| 命令 | 别名 | 干什么 |
+|------|------|--------|
+| `casemap generate` | `casemap brain`、`casemap html` | 从接口文档生成离线脑图 HTML |
+| `casemap serve` | `casemap ui`、`casemap start` | 启动 casemap 服务器（含 Web UI） |
+| `casemap init` | （无） | 交互式首次部署向导 |
+| `casemap validate` | （无） | 验证接口文档格式（不生成） |
+| `casemap parsers list` | （无） | 列出支持的 spec 解析器 |
+
+> 💡 本文档里看到 `casemap generate` / `casemap serve`，都可以替换成对应的友好别名 — 同一个命令，多个名字是 Click 注册的别名。
+
+---
+
 ## 1. 从 Swagger.json 生成测试用例脑图
 
 ### 命令行（最常用）
 
 ```bash
-uv run casemap generate examples/petstore_swagger.json -o cases.html
+uv run casemap brain examples/petstore_swagger.json -o cases.html
 ```
 
 会得到 `cases.html` 文件，**双击用浏览器打开**即可 — 零依赖、零安装。
@@ -27,8 +41,9 @@ uv run casemap generate examples/petstore_swagger.json -o cases.html
 |------|------|
 | `INPUT` | 接口文档路径（必填） |
 | `-o OUTPUT` | 输出 HTML 路径 |
-| `--format` | 强制指定格式（可选：openapi / postman / apifox）。不指定就自动检测 |
+| `--parser` | 强制指定解析器（可选：openapi / postman / apifox）。不指定就自动检测 |
 | `--llm` | 开启 LLM 重写（中文友好翻译，需要 API key） |
+| `--llm-provider` | LLM 提供商（openai / anthropic / ollama，默认 openai） |
 | `--model` | LLM 模型（与 `--llm` 配合） |
 
 ### 离线模式（生成 `.html` 给 QA）
@@ -37,12 +52,13 @@ QA 在没有服务器时直接打开这个 HTML 文件就能测。
 
 ### 推送到服务器（团队模式）
 
-如果你已经有 casemap 服务器在跑，可以**直接推 spec**：
+如果你已经有 casemap 服务器在跑，可以**直接推 spec**。注意：项目类接口（列项目、创建项目）需要 `管理员令牌`（不是项目 API Key），上传 spec 用项目 API Key。
 
 ```bash
-# 1. 创建项目（或拿到已存在项目的 API key）
+# 1. 准备凭据
 PROJECT_ID="..."
 PROJECT_API_KEY="sk-casemap-..."
+ADMIN_TOKEN="$CASEMAP_SERVER_ADMIN_TOKEN"   # 跟部署时设置的一致
 
 # 2. 上传 spec 到服务器
 curl -X POST "http://服务器IP:8765/api/v1/projects/$PROJECT_ID/specs" \
@@ -58,10 +74,10 @@ curl -X POST "http://服务器IP:8765/api/v1/projects/$PROJECT_ID/specs" \
 casemap 会自动判断你的 spec 是 OpenAPI / Swagger / Postman / Apifox：
 
 ```bash
-uv run casemap generate path/to/spec.json  # 不指定 --format
+uv run casemap brain path/to/spec.json   # 不指定 --parser
 ```
 
-如果你知道格式，可以 `--format=openapi` 强制指定，加快解析。
+如果你知道格式，可以 `--parser=openapi` 强制指定，加快解析。
 
 ### LLM 友好翻译（可选）
 
@@ -79,7 +95,7 @@ export CASEMAP_LLM_BASE_URL=https://api.deepseek.com/v1  # 或 OpenAI / Qwen / �
 export CASEMAP_LLM_MODEL=deepseek-chat
 
 # 开启 LLM 重写
-uv run casemap generate spec.json -o cases.html --llm --model deepseek-chat
+uv run casemap brain spec.json -o cases.html --llm --model deepseek-chat
 ```
 
 **支持的 LLM 提供商（任何 OpenAI 兼容接口都行）：**

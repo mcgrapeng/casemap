@@ -6,6 +6,8 @@
 
 ## 目录
 
+- [v1.0 → v1.1 已修复的问题](#v10--v11-已修复的问题)
+- [管理员令牌相关](#管理员令牌相关)
 - [状态没保存](#状态没保存)
 - [节点不显示 / 看不到脑图](#节点不显示--看不到脑图)
 - [进度条不动](#进度条不动)
@@ -16,6 +18,79 @@
 - [报告内容看不懂](#报告内容看不懂)
 - [性能问题（脑图卡顿）](#性能问题脑图卡顿)
 - [浏览器兼容性](#浏览器兼容性)
+
+---
+
+## v1.0 → v1.1 已修复的问题
+
+> 以下三个问题在早期集成测试中反复出现，**v1.1.1 已全部修复**。如果你在文档/教程里看到这些症状，请先确认你用的是 ≥ v1.1.1。
+
+### ✅ 修复 1：服务器启动失败 — `SQLAlchemy ... FutureWarning: ... future=True`
+
+**症状**：用新版本 SQLAlchemy（2.x）启动服务器时报 warning 或直接报错。
+
+**原因**：旧代码用了 `future=True` 参数 — SQLAlchemy 2.x 已经是默认行为，传它反而被废弃。
+
+**修复**：v1.1.0 起移除了 `future=True` 参数。如果还遇到这个 warning，说明你跑的是旧版本，升级：
+
+```bash
+uv add casemap@latest
+# 或
+pip install --upgrade casemap
+```
+
+### ✅ 修复 2：浏览器控制台刷屏 `401 Unauthorized`
+
+**症状**：打开 casemap UI 后浏览器 DevTools Console 立刻刷一堆 `401 Unauthorized` 报错，还以为服务挂了。
+
+**原因**：前端启动时会自动请求 `/api/v1/projects` 列项目 — 但 v1.1 起这个接口要 `管理员令牌` 才能访问；旧前端没带令牌就发请求，自然 401。
+
+**修复**：v1.1.1 起前端在「没设置管理员令牌」时**不主动请求**项目列表，Console 干净。要列出/创建项目，先在顶部输入框粘贴 `CASEMAP_SERVER_ADMIN_TOKEN`（详见 [管理员令牌相关](#管理员令牌相关)）。
+
+### ✅ 修复 3：`/web/` 返回 404
+
+**症状**：服务器跑起来了，浏览器访问 `http://服务器IP:8765` 报错 404；但 `/docs`、`/api/v1/...` 都正常。
+
+**原因**：FastAPI 默认只挂后端路由，前端 React 静态文件没被挂载 — 所以根路径没东西可返。
+
+**修复**：v1.1.0 起服务器把 React 编译产物（`frontend/dist`）挂到根路径，访问 `http://服务器IP:8765` 直接看到 UI。
+
+> 💡 如果你用 Docker 部署且仍然 404，确认镜像里有 `frontend/dist` 目录；自己用 `uv run casemap ui` 跑的话，`uv sync` 会自动拉前端构建产物（如果构建配置允许）。
+
+---
+
+## 管理员令牌相关
+
+> 「管理员令牌」= 部署时设置的 `CASEMAP_SERVER_ADMIN_TOKEN` 环境变量。详见 [术语表 - 管理员令牌](./glossary.md#admin-token管理员令牌)。
+
+### 症状 1：浏览器顶部红色「no admin」徽标一直不变绿
+
+**逐项排查：**
+
+1. **环境变量设了吗？** — 服务器启动时设了 `CASEMAP_SERVER_ADMIN_TOKEN` 吗？
+   ```bash
+   # 重启前先 echo 一下
+   export CASEMAP_SERVER_ADMIN_TOKEN="随便一段你自己定的密码"
+   uv run casemap ui
+   ```
+2. **复制时漏字符了？** — 粘贴时小心空格和换行
+3. **浏览器 localStorage 缓存了旧 token？** — DevTools → Application → Local Storage → 删掉 `casemap.admin_token` → 重新粘贴
+
+### 症状 2：看不到项目但「admin」徽标变绿了
+
+**说明**：你设的管理员令牌**是对的**，但你还没有项目 — 这是正常状态。
+
+**解决**：用「New Project」建一个，或问 PM 要一个项目 API Key。
+
+### 症状 3：想完全跳过手动输入 token
+
+用 `casemap init` 向导首次部署：
+
+```bash
+uv run casemap init --admin-token "你的密码" --start-server --no-open-browser
+```
+
+向导会生成一个本地 HTML，浏览器打开它一次就把 token 写进 localStorage（key: `casemap.admin_token`）。之后每次访问 casemap 都不用再输。
 
 ---
 
@@ -215,16 +290,23 @@ casemap 服务器在阿里云 ECS 上，但你的电脑在公司网络里 — �
 
 **症状**：服务器能 `curl localhost:8765`，但你从外部连不上。
 
-**可能原因**：Docker 没把端口暴露出来。
+**可能原因**：Docker 没把端口暴露出来，或 `CASEMAP_SERVER_ADMIN_TOKEN` 没传进容器。
 
 **解决**：检查 `docker-compose.yml`：
 
 ```yaml
-ports:
-  - "8765:8765"  # 必须有这一行
+services:
+  casemap:
+    image: casemap:1.1.1
+    ports:
+      - "8765:8765"
+    environment:
+      - CASEMAP_SERVER_ADMIN_TOKEN=随便一段你自己定的密码  # 必须设置，否则所有人都是 no admin
+    volumes:
+      - casemap-data:/data
 ```
 
-如果用 `docker run`，要有 `-p 8765:8765`。
+如果用 `docker run`，要有 `-p 8765:8765` 和 `-e CASEMAP_SERVER_ADMIN_TOKEN=...`。
 
 #### 第 7 步：资源耗尽
 
@@ -420,7 +502,7 @@ casemap **只支持 JSON 格式**的接口文档。
 **详细动作**：让开发用 `--llm` 重新生成脑图。
 
 ```bash
-uv run casemap generate spec.json -o cases.html --llm --model deepseek-chat
+uv run casemap brain spec.json -o cases.html --llm --model deepseek-chat
 ```
 
 #### 2. 没有失败备注

@@ -65,13 +65,19 @@ docker compose up -d
 ### 方案 C：Python 直接运行（开发自己电脑上的临时测试用）
 
 ```bash
+# 1. 装依赖（首次）
 uv sync
-uv run casemap serve --host 0.0.0.0 --port 8765 --db ./casemap.db
+
+# 2. 必填：设置管理员令牌（前端首次访问需要输入它才能列项目）
+export CASEMAP_SERVER_ADMIN_TOKEN="$(openssl rand -hex 16)"
+
+# 3. 启动（127.0.0.1 只本机访问；要给团队访问用 0.0.0.0）
+uv run casemap ui --host 0.0.0.0 --port 8765 --db ./casemap.db
 ```
 
 访问 `http://localhost:8765`。
 
-<!-- TODO: screenshot of server running in terminal (no CLI screenshot available yet) -->
+> **小提示**：`casemap ui` 是 `casemap serve` 的友好别名，两个完全等价。还有 `casemap start` 也可以启动服务器。第一次部署想图省事，可以直接跑 `casemap init` 走交互式向导（会自动生成令牌 + 写一个本地 HTML 帮你存到浏览器 localStorage + 后台拉起服务器）。
 
 ### 给 PM 的服务器地址
 
@@ -85,13 +91,62 @@ http://你的服务器IP:8765
 
 ---
 
+## 第一步半：所有人必做 — 输入管理员令牌
+
+> ⚠️ **这一步是必须的，否则你看不到任何项目也不能创建。** casemap v1.1+ 起，列出/创建项目属于「管理员操作」，需要管理员令牌。
+
+### 什么是管理员令牌？
+
+- 是一串你自己设的字符串（部署时决定，比如 `export CASEMAP_SERVER_ADMIN_TOKEN=随便一段你自己定的密码`）
+- 服务器启动时从环境变量 `CASEMAP_SERVER_ADMIN_TOKEN` 读取；没有它，所有管理类接口都返回 403
+- 跟 **项目密钥（API Key）** 是两回事 — 项目密钥是「每个项目自己的钥匙」，管理员令牌是「整栋楼的钥匙」
+
+详见 [术语表 - 管理员令牌](./glossary.md#admin-token管理员令牌)。
+
+### 浏览器怎么输入？
+
+1. 打开 `http://服务器IP:8765`
+2. 页面**顶部**有一个输入框（红色徽标：「no admin」）
+3. 把部署时设置的 `CASEMAP_SERVER_ADMIN_TOKEN` 粘贴进去
+4. 按 **Enter**
+
+**成功后：**
+
+- 顶部输入框的红色「no admin」徽标 → 变成绿色的「admin」
+- 下方项目列表正常加载出来
+- 右上角 **「New Project」** 按钮变可用
+
+![首页顶部的「管理员令牌」输入框 - 粘贴令牌按 Enter 后徽标由红变绿](../screenshots/02-admin-token-set.png)
+
+### 嫌每次打开都要输入？让 `casemap init` 帮你存
+
+如果你不想每次打开浏览器都粘贴一遍，部署时跑一次 `casemap init` 向导：
+
+```bash
+uv run casemap init
+# 1. 提示输入 admin token → 粘贴
+# 2. 提示是否启动服务器 → yes
+# 3. 提示是否打开浏览器 → yes
+# 4. 向导生成一个本地 HTML，浏览器打开它一次就把 token 写进 localStorage（key: casemap.admin_token）
+# 5. 之后每次访问 casemap 都不用再输
+```
+
+或者手动：
+
+```bash
+# 生成一个临时 HTML，打开它一次就能把 token 写进 localStorage
+uv run casemap --help
+```
+
+---
+
 ## 第二步（PM）：创建项目
 
 PM（项目负责人）登录后做的第一件事：
 
 ### 步骤 1：打开浏览器访问服务器
 
-地址栏输入 PM 给你的 `http://服务器IP:8765`，回车。
+地址栏输入 PM 给你的 `http://服务器IP:8765`，回车。**先在顶部输入框粘贴管理员令牌并按 Enter**（见上一步）。
 
 你应该看到 casemap 首页 — 一个「Projects」列表，目前没有任何项目。
 
@@ -137,6 +192,12 @@ sk-casemap-7f3a9b2e8c1d4f5a6b7c8d9e0f1a2b3c
 2. 选择你的接口文档文件（`.json` 后缀 — OpenAPI / Swagger / Postman / Apifox）
 3. 等 5–30 秒（看接口数量），casemap 会自动生成脑图
 
+**上传之前项目页是空的：**
+
+![新建项目后、上传 spec 前的空项目状态](../screenshots/05-project-empty.png)
+
+上传过程：
+
 ![上传接口列表 - 点 Upload Spec 按钮打开文件选择框](../screenshots/06-upload-spec.png)
 
 **上传完成后你会看到：**
@@ -167,10 +228,10 @@ sk-casemap-7f3a9b2e8c1d4f5a6b7c8d9e0f1a2b3c
 
 1. 打开浏览器
 2. 访问 `http://服务器IP:8765`
-3. 在首页「Sign in」框里粘贴 API Key
-4. 回车 → 自动进入项目 → 看到脑图
+3. **首页顶部输入框**粘贴「管理员令牌」→ 按 Enter（看到顶部红色「no admin」变成绿色「admin」）
+4. 进入项目 → 直接在脑图上点节点、标状态 — 项目 API Key 已经在 URL 里带上，不需要单独输入
 
-![首页的「管理员令牌」输入框 - 团队模式同样需要输入管理员令牌以列出项目](../screenshots/02-admin-token-set.png)
+![首页顶部的「管理员令牌」输入框 - 团队模式同样需要输入管理员令牌以列出项目](../screenshots/02-admin-token-set.png)
 
 ---
 
@@ -186,7 +247,7 @@ sk-casemap-7f3a9b2e8c1d4f5a6b7c8d9e0f1a2b3c
 5. 在窗口 A 里点任意一个脑图节点 → 标记 **「通过」**
 6. 切到窗口 B → **不要刷新**！看 1 秒内这个节点会不会自动变绿
 
-<!-- TODO: screenshot of side-by-side windows (multi-window demo; capture manually) -->
+> 💡 试一下：两个窗口并排放，QA 标记一个用例 — PM 那边 1 秒内变绿，不需要任何额外操作。
 
 **这意味着什么：**
 
@@ -248,7 +309,7 @@ PM 老板最爱的页面 — 「进度」：
 
 进度页还有按「标签」（tag）切分的横条 — 例如按接口路径分（`/login`、`/order`、`/pay`），看每个模块的完成率。
 
-<!-- TODO: screenshot of tag breakdown (进度页的 per-tag 图表需要单独截图) -->
+> 📊 每个 tag 一个横条，颜色和状态色一致。一眼能看出 `/order` 还差 30% 没测、`/login` 已经 100%。
 
 ---
 
@@ -261,7 +322,7 @@ PM 老板最爱的页面 — 「进度」：
 3. 看到一张干净的报告页 — **只读，不能改状态**
 4. 点 **「Print / Export PDF」**（打印 / 导出 PDF），或 **「Download Report HTML」**（下载报告 HTML）
 
-<!-- TODO: screenshot of report page (报告页需要单独截图) -->
+> 💡 报告页面是单独路由 `/projects/{id}/report`，不需要管理员令牌也能访问 — 老板拿到链接直接打开看。
 
 **报告里有什么：**
 
