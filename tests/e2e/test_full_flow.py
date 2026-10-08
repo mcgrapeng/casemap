@@ -119,13 +119,10 @@ def test_full_flow(running_server) -> None:
 
     base_url, admin_token = running_server
 
-    # Re-use the system browser cache so we don't have to redownload Chromium
-    # just for this test (1.4GB saved per machine).
-    os.environ.setdefault(
-        "PLAYWRIGHT_BROWSERS_PATH",
-        "/Users/zhangpeng/Library/Caches/ms-playwright",
-    )
-
+    # Don't override PLAYWRIGHT_BROWSERS_PATH — Playwright's OS default
+    # is correct everywhere: ~/Library/Caches/ms-playwright on macOS,
+    # ~/.cache/ms-playwright on Linux. CI uses the default, the dev's
+    # Mac uses the default, no hardcoded paths to keep in sync.
     project_name = f"e2e-petstore-{uuid.uuid4().hex[:8]}"
 
     with sync_playwright() as p:
