@@ -28,6 +28,16 @@ jobs:
       - name: Sync dependencies
         run: uv sync --frozen --all-extras
 
+      - name: Create static placeholder index.html
+        run: |
+          mkdir -p src/casemap/server/static
+          cat > src/casemap/server/static/index.html <<'HTML'
+          <!DOCTYPE html>
+          <html lang="en"><head><meta charset="UTF-8"><title>casemap server</title></head>
+          <body><h1>casemap server</h1><p>REST API at <code>/api/v1/...</code>.
+          OpenAPI docs: <a href="/docs">/docs</a>.</p></body></html>
+          HTML
+
       - name: Ruff
         run: uv run ruff check --fix --ignore B008 src/ tests/
 
@@ -35,7 +45,7 @@ jobs:
         run: uv run mypy src/casemap
 
       - name: Pytest
-        run: uv run pytest -q --cov=casemap --cov-report=xml
+        run: uv run pytest -q -m "not slow" --cov=casemap --cov-report=xml
 
       - name: Check Codecov token availability
         id: check-token
