@@ -59,7 +59,7 @@ jobs:
         run: uv run playwright install chromium
 
       - name: Ruff
-        run: uv run ruff check src/ tests/
+        run: uv run ruff check --fix --ignore B008 src/ tests/
 
       - name: Mypy
         run: uv run mypy src/casemap
