@@ -71,7 +71,7 @@ uv run casemap serve --host 0.0.0.0 --port 8765 --db ./casemap.db
 
 访问 `http://localhost:8765`。
 
-<!-- TODO: screenshot of server running in terminal -->
+<!-- TODO: screenshot of server running in terminal (no CLI screenshot available yet) -->
 
 ### 给 PM 的服务器地址
 
@@ -95,7 +95,7 @@ PM（项目负责人）登录后做的第一件事：
 
 你应该看到 casemap 首页 — 一个「Projects」列表，目前没有任何项目。
 
-<!-- TODO: screenshot of empty home page -->
+![casemap 主页 - 尚未输入管理员令牌时显示空状态](../screenshots/01-homepage.png)
 
 ### 步骤 2：创建项目
 
@@ -119,7 +119,7 @@ sk-casemap-7f3a9b2e8c1d4f5a6b7c8d9e0f1a2b3c
 - ❌ **不要关掉这个弹窗再问"刚才那串字符呢" — 它不会再次显示**
 - ❌ **不要发到公开群 / 朋友圈**
 
-<!-- TODO: screenshot of one-time API key display with warning banner -->
+![创建项目后弹出的「保存 API key」对话框，包含 Copy 按钮和警告横幅](../screenshots/04-api-key-dialog.png)
 
 **这串密钥的用途：**
 
@@ -137,7 +137,7 @@ sk-casemap-7f3a9b2e8c1d4f5a6b7c8d9e0f1a2b3c
 2. 选择你的接口文档文件（`.json` 后缀 — OpenAPI / Swagger / Postman / Apifox）
 3. 等 5–30 秒（看接口数量），casemap 会自动生成脑图
 
-<!-- TODO: screenshot of file selection dialog -->
+![上传接口列表 - 点 Upload Spec 按钮打开文件选择框](../screenshots/06-upload-spec.png)
 
 **上传完成后你会看到：**
 
@@ -170,7 +170,7 @@ sk-casemap-7f3a9b2e8c1d4f5a6b7c8d9e0f1a2b3c
 3. 在首页「Sign in」框里粘贴 API Key
 4. 回车 → 自动进入项目 → 看到脑图
 
-<!-- TODO: screenshot of API key login form -->
+![首页的「管理员令牌」输入框 - 团队模式同样需要输入管理员令牌以列出项目](../screenshots/02-admin-token-set.png)
 
 ---
 
@@ -186,7 +186,7 @@ sk-casemap-7f3a9b2e8c1d4f5a6b7c8d9e0f1a2b3c
 5. 在窗口 A 里点任意一个脑图节点 → 标记 **「通过」**
 6. 切到窗口 B → **不要刷新**！看 1 秒内这个节点会不会自动变绿
 
-<!-- TODO: screenshot of side-by-side windows -->
+<!-- TODO: screenshot of side-by-side windows (multi-window demo; capture manually) -->
 
 **这意味着什么：**
 
@@ -215,7 +215,7 @@ PM 老板最爱的页面 — 「进度」：
 1. 在脑图页面，左侧导航栏点 **「Progress」**（进度）
 2. 看到一张漂亮的统计面板
 
-<!-- TODO: screenshot of progress page -->
+![项目页面的进度条 - 已通过 1/15 (7%)，未测 14 条；状态徽标按色块区分](../screenshots/09-status-marked.png)
 
 ### 数字怎么看
 
@@ -248,7 +248,7 @@ PM 老板最爱的页面 — 「进度」：
 
 进度页还有按「标签」（tag）切分的横条 — 例如按接口路径分（`/login`、`/order`、`/pay`），看每个模块的完成率。
 
-<!-- TODO: screenshot of tag breakdown -->
+<!-- TODO: screenshot of tag breakdown (进度页的 per-tag 图表需要单独截图) -->
 
 ---
 
@@ -261,7 +261,7 @@ PM 老板最爱的页面 — 「进度」：
 3. 看到一张干净的报告页 — **只读，不能改状态**
 4. 点 **「Print / Export PDF」**（打印 / 导出 PDF），或 **「Download Report HTML」**（下载报告 HTML）
 
-<!-- TODO: screenshot of report page -->
+<!-- TODO: screenshot of report page (报告页需要单独截图) -->
 
 **报告里有什么：**
 

@@ -37,7 +37,7 @@
 - 文件后缀是 `.html`（不是 `.htm.txt` 之类的）
 - 文件大小至少几 KB（如果只有几百字节，说明下载失败）
 
-<!-- TODO: screenshot of file in Downloads folder -->
+<!-- TODO: screenshot of file in Downloads folder (OS 截图，需在用户机器上捕获) -->
 
 ### 第 2 步：用浏览器打开文件
 
@@ -49,7 +49,7 @@
 
 打开后你会看到一张五颜六色的「脑图」 — 这就是 casemap 的核心界面。
 
-<!-- TODO: screenshot of initial brain map view -->
+![初次打开脑图 - 上传 petstore 后的 15 个测试用例节点，按 pets 标签单列分色](../screenshots/07-brain-map.png)
 
 ### 第 3 步：认识脑图界面
 
@@ -85,7 +85,7 @@
    - **预期结果**：每一步应该看到什么
 3. **右侧底部有 4 个按钮**：✅ 通过 / ❌ 失败 / ⏸ 跳过 / ↩ 重置
 
-<!-- TODO: screenshot of selected node showing 4 status buttons -->
+![选中节点后的右侧详情面板 - 含 5 个状态按钮（v1 实际为 通过/失败/阻塞/跳过/待测）、步骤、备注](../screenshots/08-case-detail.png)
 
 ### 第 5 步：标记状态
 
@@ -102,7 +102,7 @@
 - 顶部进度条的「已测」数字 +1
 - 脑图上相关的「汇总节点」（比如一个接口有 5 条子用例）的颜色会跟着更新
 
-<!-- TODO: screenshot of node color change after marking passed -->
+![标记通过后的节点 - 边框变为绿色 (stroke-status-passed)，进度条更新到 1/15](../screenshots/09-status-marked.png)
 
 ### 第 6 步：写失败备注（很重要！）
 
@@ -135,7 +135,7 @@
 - 失败用例清单 + 你的备注
 - 每个接口的覆盖情况
 
-<!-- TODO: screenshot of exported report -->
+<!-- TODO: screenshot of exported report (报告页/HTML 下载是单独流程) -->
 
 ---
 

@@ -39,7 +39,7 @@
 
 脑图上每个彩色方块（也叫「节点」）就是一个测试用例。
 
-<!-- TODO: screenshot of one node with all labels visible -->
+![脑图节点 - 每个矩形就是一个测试用例，按标签分列、按类型分色](../screenshots/07-brain-map.png)
 
 **节点上你能看到的信息：**
 
@@ -85,7 +85,7 @@
 | ⏸ Skip | 黄色暂停 | 标为「跳过」 |
 | ↩ Reset | 灰色返回 | 重置回「未测」 |
 
-<!-- TODO: screenshot of the 4 status buttons -->
+![右侧详情面板的 5 个状态按钮：通过 / 失败 / 阻塞 / 跳过 / 待测（v1 实际为 5 个按钮，不是 4 个）](../screenshots/08-case-detail.png)
 
 **操作流程：**
 

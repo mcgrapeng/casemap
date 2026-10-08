@@ -22,7 +22,7 @@ PM 在 casemap 里是「数据拥有者」 — 你创建项目、上传接口、
    - （可选）**Description**：项目说明，会显示在项目详情页
 5. 点 **「Create」**（创建）
 
-<!-- TODO: screenshot of new project form -->
+![New Project 表单 - 填写项目名 (acme-api) 和可选 LLM 配置后点 Create project](../screenshots/03-new-project-form.png)
 
 ### ⚠️ 创建后立刻要做的事
 
@@ -73,7 +73,7 @@ PM 在 casemap 里是「数据拥有者」 — 你创建项目、上传接口、
 | Postman v2.1 | `.json` | Postman → Export |
 | Apifox | `.json` | Apifox → 导出 OpenAPI |
 
-<!-- TODO: screenshot of file picker with supported formats -->
+![点 Upload Spec 按钮后弹出文件选择框，仅接受 .json / .yaml / .yml](../screenshots/06-upload-spec.png)
 
 **怎么拿到这个文件？**
 
@@ -117,7 +117,7 @@ PM 在 casemap 里是「数据拥有者」 — 你创建项目、上传接口、
 - ⚠️ 不要发到公开群
 - ⚠️ 不要截图发到朋友圈 / 微博 / GitHub
 
-<!-- TODO: screenshot of team invitation message template -->
+<!-- TODO: screenshot of team invitation message template (IM/邮件模板需 PM 自行起草) -->
 
 ### 测试人员收到后做什么？
 
@@ -138,7 +138,7 @@ PM 在 casemap 里是「数据拥有者」 — 你创建项目、上传接口、
 
 在脑图页面左侧导航点 **「Progress」**（进度），或者地址直接 `/projects/{项目ID}/progress`。
 
-<!-- TODO: screenshot of progress dashboard -->
+![项目页面顶部的进度条 - 已标记 1 条通过的实时统计 + 颜色分组徽标](../screenshots/09-status-marked.png)
 
 ### 数字怎么看
 
@@ -180,7 +180,7 @@ PM 在 casemap 里是「数据拥有者」 — 你创建项目、上传接口、
 - 紫色 = 跳过
 - 灰色 = 未测
 
-<!-- TODO: screenshot of donut chart with legend -->
+![脑图节点按状态分色 - 进度页的饼图按相同颜色编码，本图展示了同一套调色板](../screenshots/07-brain-map.png)
 
 ### 按接口 / 标签看（细分维度）
 
@@ -199,7 +199,7 @@ PM 在 casemap 里是「数据拥有者」 — 你创建项目、上传接口、
 - 一眼看出**哪个模块 100% 测完**（横条全绿，可以收尾）
 - 一眼看出**哪个模块失败最多**（红色横条，PM 要去催开发）
 
-<!-- TODO: screenshot of per-tag breakdown -->
+<!-- TODO: screenshot of per-tag breakdown (进度页的 per-tag 横条需要单独截图) -->
 
 ---
 
@@ -209,7 +209,7 @@ PM 在 casemap 里是「数据拥有者」 — 你创建项目、上传接口、
 
 进度页面下方有「Failed Cases」（失败用例）清单，或者点左侧导航 **「Cases」** → 筛选「Failed」。
 
-<!-- TODO: screenshot of failed cases list -->
+<!-- TODO: screenshot of failed cases list (筛选失败用例视图需单独截图) -->
 
 ### 失败清单里有什么
 
@@ -237,9 +237,9 @@ PM 在 casemap 里是「数据拥有者」 — 你创建项目、上传接口、
 3. 三种导出方式：
    - **下载 HTML**：适合邮件附件
    - **打印 PDF**：适合提交给上级
-   - **截图**：适合发 IM
+    - **截图**：适合发 IM
 
-<!-- TODO: screenshot of report page -->
+<!-- TODO: screenshot of report page (报告页 /projects/{id}/report 需要单独截图) -->
 
 ### 报告里有什么
 
